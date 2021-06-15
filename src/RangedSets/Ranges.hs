@@ -26,8 +26,8 @@ rangeListHas [] v = False
 rangeListHas [Rg a b] v = rangeHas (Rg a b) v
 rangeListHas [Rg a1 b1, Rg a2 b2] v
   = rangeHas (Rg a1 b1) v || rangeHas (Rg a2 b2) v
-rangeListHas (r1 : (r2 : (_ : _))) v
-  = rangeHas r1 v || rangeListHas (r2 : (x : xs)) v
+rangeListHas (r1 : (r2 : (r4 : rs))) v
+  = rangeHas r1 v || rangeListHas (r2 : (r4 : rs)) v
 
 fullRange :: Ord a => DiscreteOrdered a => Range a
 fullRange = Rg BoundaryBelowAll BoundaryAboveAll

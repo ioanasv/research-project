@@ -1,4 +1,9 @@
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE UndecidableInstances #-}
+
 module RangedSets.RangedSet where
+
+
 
 import RangedSets.DiscreteOrdered
 import RangedSets.Boundaries
@@ -22,8 +27,11 @@ validRangeList [x] = rangeLower x <= rangeUpper x
 validRangeList (x : (r1 : rss))
   = okAdjacent x r1 && validRangeList (r1 : rss)
 
-newtype DiscreteOrdered v => RSet v = RS {rSetRanges :: [Range v]}
-   deriving (Eq, Show)
+data RSet a = RS [Range a]
+                deriving (Show, Eq)
+
+rSetRanges :: Ord a => DiscreteOrdered a => RSet a -> [Range a]
+rSetRanges (RS ranges) = ranges
 
 overlap1 ::
            Ord a => DiscreteOrdered a => Range a -> Range a -> Bool
@@ -82,7 +90,7 @@ rSetNegation (RS ranges)
   = RS (ranges1 (setBounds1 (bounds1 ranges)))
 
 rSetIsFull :: Ord a => DiscreteOrdered a => RSet a -> Bool
-rSetIsFull set = rSetIsEmpty (rSetNegation set)
+rSetIsFull (RS ranges) = rSetIsEmpty (rSetNegation (RS ranges))
 
 rSetEmpty :: Ord a => DiscreteOrdered a => RSet a
 rSetEmpty = RS []
@@ -155,6 +163,24 @@ rSetIsSubsetStrict rs1 rs2
 
 (-<-) :: Ord a => DiscreteOrdered a => RSet a -> RSet a -> Bool
 rs1 -<- rs2 = rSetIsSubsetStrict rs1 rs2
+
+validFunction2 ::
+                 Ord a =>
+                   DiscreteOrdered a =>
+                   Boundary a -> (Boundary a -> Boundary a) -> Bool
+validFunction2 b f = f b > b
+
+helper ::
+         Ord a =>
+           DiscreteOrdered a => Maybe (Boundary a) -> Boundary a -> Bool
+helper Nothing b = True
+helper (Just b3) b = b3 > b
+
+validFunction ::
+                Ord a =>
+                  DiscreteOrdered a =>
+                  Boundary a -> (Boundary a -> Maybe (Boundary a)) -> Bool
+validFunction b g = helper (g b) b
 
 ranges3 ::
           Ord a =>

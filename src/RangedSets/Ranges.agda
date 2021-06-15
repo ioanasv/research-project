@@ -130,7 +130,7 @@ rangeHas1 v r@(Rg b1 b2) = (v />/ b1) && not (v />/ b2)
 rangeListHas [] v = false
 rangeListHas (r@(Rg a b) ∷ []) v = rangeHas r v
 rangeListHas (r1@(Rg a1 b1) ∷ r2@(Rg a2 b2) ∷ []) v = (rangeHas r1 v) || (rangeHas r2 v)
-rangeListHas ls@(r1 ∷ r2 ∷ r3@(_ ∷ _)) v = (rangeHas r1 v) || (rangeListHas (r2 ∷ r3) v)
+rangeListHas ls@(r1 ∷ r2 ∷ r3@(r4 ∷ rs)) v = (rangeHas r1 v) || (rangeListHas (r2 ∷ r3) v)
 {-# COMPILE AGDA2HS rangeListHas #-}
 
 rangeListHas1 : ⦃  o : Ord a  ⦄ → ⦃  dio : DiscreteOrdered a  ⦄ → a → List (Range a) → Bool
