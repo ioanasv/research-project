@@ -202,7 +202,9 @@ prop_UnionRange1 ⦃ ord ⦄ ⦃ diso ⦄ r1@(Rg l1 u1) r2@(Rg l2 u2) ⦃ ne1 �
    =⟨ cong (rangeListHas1 n) (propIf3 ((max l1 l2) <= (min u1 u2)) ne3) ⟩  
      (rangeListHas1 n (r1 ∷ r2 ∷ []))
    =⟨⟩  
-     ((rangeHas r1 n) || (rangeHas r2 n))
+     ((rangeHas r1 n) || ((rangeHas r2 n) || false)) 
+   =⟨ cong ((rangeHas r1 n) ||_) (prop_or_false2 (rangeHas r2 n)) ⟩  
+     ((rangeHas r1 n) || (rangeHas r2 n))      
    end
 
 -- prop_UnionRange1' : ⦃ ord : Ord a ⦄ → ⦃ diso : DiscreteOrdered a ⦄ 

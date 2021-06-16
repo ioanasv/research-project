@@ -50,15 +50,15 @@ validRangeList (x ∷ rs@(r1 ∷ rss)) = (okAdjacent x r1) && (validRangeList rs
 
 data RSet (a : Set) ⦃ o : Ord a ⦄ ⦃ dio : DiscreteOrdered a ⦄ : Set where
     RS : (rg : List (Range a)) → {IsTrue (validRangeList rg)} → RSet a
-{-# COMPILE AGDA2HS RSet deriving (Show, Eq) #-}
--- {-# FOREIGN AGDA2HS
--- data DiscreteOrdered v => RSet v = RS {rSetRanges :: [Range v]}
---    deriving (Eq, Show)
--- #-}
+-- {-# COMPILE AGDA2HS RSet deriving (Show, Eq) #-}
+{-# FOREIGN AGDA2HS
+data DiscreteOrdered a => RSet a = RS {rSetRanges :: [Range a]}
+   deriving (Eq, Show)
+#-}
 
 rSetRanges : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → RSet a → List (Range a)
 rSetRanges (RS ranges) = ranges
-{-# COMPILE AGDA2HS rSetRanges #-}
+-- {-# COMPILE AGDA2HS rSetRanges #-}
 
 overlap1 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → Range a → Range a → Bool
 overlap1 (Rg _ upper1) (Rg lower2 _) = (upper1 >= lower2)
@@ -198,7 +198,8 @@ negation : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs : RSet 
    → (IsTrue (validRangeList (rSetRanges rs))) 
    → (IsTrue (validRangeList (ranges1 (setBounds1 (bounds1 (rSetRanges rs))))))
 rSetNegation : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rg : RSet a) → RSet a
-rSetNegation ⦃ o ⦄ ⦃ dio ⦄ set@(RS ranges {prf}) = RS (ranges1 (setBounds1 (bounds1 ranges))) {negation set prf}
+rSetNegation ⦃ o ⦄ ⦃ dio ⦄ set@(RS ranges {prf}) = 
+   RS (ranges1 (setBounds1 (bounds1 ranges))) {negation set prf}
 {-# COMPILE AGDA2HS rSetNegation #-}
  
 -- | True if the negation of the set has no members.
@@ -220,9 +221,7 @@ rSetFull ⦃ o ⦄ ⦃ dio ⦄ = RS ((Rg BoundaryBelowAll BoundaryAboveAll) ∷ 
 
 -- | True if the value is within the ranged set.  Infix precedence is left 5.
 rSetHas : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs : RSet a) → a → Bool
-rSetHas (RS []) _ = false
-rSetHas ⦃ o ⦄ ⦃ dio ⦄ (RS ls@(r ∷ []) {prf}) value = rangeHas ⦃ o ⦄ r value 
-rSetHas ⦃ o ⦄ ⦃ dio ⦄ rst@(RS ls@(r ∷ rs) {prf}) value = (rangeHas ⦃ o ⦄ r value) || (rSetHas (RS rs {headandtail rst prf}) value)
+rSetHas (RS ranges) v = rangeListHas ranges v
 {-# COMPILE AGDA2HS rSetHas #-}
 _-?-_ : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs : RSet a) → a → Bool
 _-?-_ rs = rSetHas rs 
@@ -241,19 +240,20 @@ merge1HasValidRanges : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄
    → (rs1 rs2 : RSet a)
    → IsTrue (validRanges (merge1 (rSetRanges rs1) (rSetRanges rs2))) 
 -- proof that merge1 outputs a sorted range list
-merge1Sorted : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ 
-   → (rs1 rs2 : RSet a) → IsTrue (sortedRangeList (merge1 (rSetRanges rs1) (rSetRanges rs2)))
+merge1Sorted : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs1 rs2 : RSet a) 
+   → IsTrue (sortedRangeList (merge1 (rSetRanges rs1) (rSetRanges rs2)))
 -- union of two valid ranged sets is also valid range set
-unionHolds : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ 
-         → (rs1 rs2 : RSet a)
-         → IsTrue (validRangeList (normalise (merge1 (rSetRanges rs1) (rSetRanges rs2))
+unionHolds : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs1 rs2 : RSet a)
+   → IsTrue (validRangeList (normalise (merge1 (rSetRanges rs1) (rSetRanges rs2))
           ⦃ merge1Sorted rs1 rs2 ⦄ ⦃ merge1HasValidRanges rs1 rs2 ⦄)) 
 unionHolds ⦃ o ⦄ ⦃ dio ⦄ rs1 rs2 = normalisedSortedList 
-   (merge1 (rSetRanges rs1) (rSetRanges rs2)) (merge1Sorted rs1 rs2) (merge1HasValidRanges rs1 rs2)      
+   (merge1 (rSetRanges rs1) (rSetRanges rs2)) (merge1Sorted rs1 rs2) 
+      (merge1HasValidRanges rs1 rs2)      
 -- | Set union for ranged sets.  Infix precedence is left 6.
 rSetUnion : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs1 rs2 : RSet a) → RSet a
 rSetUnion ⦃ o ⦄ ⦃ dio ⦄ r1@(RS ls1) r2@(RS ls2) = 
-   RS (normalise (merge1 ls1 ls2) ⦃ merge1Sorted r1 r2 ⦄ ⦃ merge1HasValidRanges r1 r2 ⦄) {unionHolds r1 r2}
+   RS (normalise (merge1 ls1 ls2) ⦃ merge1Sorted r1 r2 ⦄ ⦃ merge1HasValidRanges r1 r2 ⦄) 
+      {unionHolds r1 r2}
 {-# COMPILE AGDA2HS rSetUnion #-}
 _-\/-_ : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs1 rs2 : RSet a) → RSet a
 _-\/-_ rs1 rs2 = rSetUnion rs1 rs2
@@ -270,22 +270,20 @@ merge2 ms1@(h1 ∷ t1) ms2@(h2 ∷ t2) =
    (if_then_else_ (rangeUpper h1 < rangeUpper h2) (merge2 t1 ms2) (merge2 ms1 t2))
 {-# COMPILE AGDA2HS merge2 #-}
 -- intersection of two valid ranged sets is also valid range set
-intersection0 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs1 : RSet a) → (rs2 : RSet a)
-      → IsTrue (validRangeList (filter (λ x → (rangeIsEmpty x == false)) 
+intersection0 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs1 rs2 : RSet a)
+   → IsTrue (validRangeList (filter (λ x → (rangeIsEmpty x == false)) 
                   (merge2 (rSetRanges rs1) (rSetRanges rs2))))
 -- | Set intersection for ranged sets.  Infix precedence is left 7.                 
-rSetIntersection : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs1 rs2 : RSet a) → RSet a
+rSetIntersection : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ 
+   → (rs1 rs2 : RSet a) → RSet a
 rSetIntersection ⦃ o ⦄ ⦃ dio ⦄ rs1@(RS ls1) rs2@(RS ls2)  =
-    RS (filter (λ x → rangeIsEmpty ⦃ o ⦄ ⦃ dio ⦄ x == false) (merge2 ls1 ls2)) {intersection0 rs1 rs2}
+    RS (filter (λ x → rangeIsEmpty ⦃ o ⦄ ⦃ dio ⦄ x == false) (merge2 ls1 ls2)) 
+      {intersection0 rs1 rs2}
 {-# COMPILE AGDA2HS rSetIntersection #-}
 _-/\-_ : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs1 rs2 : RSet a) → RSet a
 _-/\-_ rs1 rs2 = rSetIntersection rs1 rs2
 {-# COMPILE AGDA2HS _-/\-_ #-}
 
--- proof that the difference of 2 sets is valid
-negation2 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs : RSet a)
-         → (tr : IsTrue (validRangeList (ranges1 (setBounds1 (bounds1 (rSetRanges rs)))))) 
-         → IsTrue (validRangeList (rSetRanges (rSetNegation rs)))
 -- | Set difference.  Infix precedence is left 6.         
 rSetDifference : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs1 rs2 : RSet a) → RSet a
 rSetDifference ⦃ o ⦄ ⦃ dio ⦄ rs1 rs2 = rSetIntersection rs1 (rSetNegation rs2)
@@ -947,22 +945,6 @@ merge1IsSorted1 ⦃ o ⦄ ⦃ dio ⦄ rs1@(RS ms1@(h1 ∷ t1)) rs2@(RS ms2@(h2 �
       true
    end
 merge1Sorted ⦃ o ⦄ ⦃ dio ⦄ rs1@(RS ranges1 {prf1}) rs2@(RS ranges2 {prf2})= subst IsTrue (sym (merge1IsSorted1 rs1 rs2 prf1 prf2)) IsTrue.itsTrue
-
--- helper proof for set difference       
-negationHelper : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs : RSet a)
-         → {tr0 : IsTrue (validRangeList (rSetRanges rs))}
-         → validRangeList (rSetRanges (rSetNegation rs)) ≡ validRangeList (ranges1 (setBounds1 (bounds1 (rSetRanges rs))))
-negationHelper ⦃ o ⦄ ⦃ dio ⦄ rs@(RS ranges) {prf} =   
-  begin 
-     validRangeList (rSetRanges (rSetNegation rs)) 
-  =⟨⟩ 
-     validRangeList (rSetRanges (RS ⦃ o ⦄ ⦃ dio ⦄ (ranges1 ⦃ o ⦄ ⦃ dio ⦄ (setBounds1 ⦃ o ⦄ ⦃ dio ⦄ (bounds1 ⦃ o ⦄ ⦃ dio ⦄ ranges))) {negation rs prf}))
-  =⟨⟩
-    validRangeList (ranges1 ⦃ o ⦄ ⦃ dio ⦄ (setBounds1 ⦃ o ⦄ ⦃ dio ⦄ (bounds1 ⦃ o ⦄ ⦃ dio ⦄ ranges)))
-  =⟨⟩  
-    validRangeList (ranges1 ⦃ o ⦄ ⦃ dio ⦄ (setBounds1 ⦃ o ⦄ ⦃ dio ⦄ (bounds1 ⦃ o ⦄ ⦃ dio ⦄ (rSetRanges rs))))
-  end  
-negation2 rs@(RS ranges {prf0}) prf = subst IsTrue (sym (negationHelper rs {prf0})) prf
 
 -- proof that invariant holds for intersection
 intersectionHolds : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs1 : RSet a) → (rs2 : RSet a)

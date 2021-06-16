@@ -27,11 +27,8 @@ validRangeList [x] = rangeLower x <= rangeUpper x
 validRangeList (x : (r1 : rss))
   = okAdjacent x r1 && validRangeList (r1 : rss)
 
-data RSet a = RS [Range a]
-                deriving (Show, Eq)
-
-rSetRanges :: Ord a => DiscreteOrdered a => RSet a -> [Range a]
-rSetRanges (RS ranges) = ranges
+data DiscreteOrdered a => RSet a = RS {rSetRanges :: [Range a]}
+   deriving (Eq, Show)
 
 overlap1 ::
            Ord a => DiscreteOrdered a => Range a -> Range a -> Bool
@@ -99,10 +96,7 @@ rSetFull :: Ord a => DiscreteOrdered a => RSet a
 rSetFull = RS [Rg BoundaryBelowAll BoundaryAboveAll]
 
 rSetHas :: Ord a => DiscreteOrdered a => RSet a -> a -> Bool
-rSetHas (RS []) _ = False
-rSetHas (RS [r]) value = rangeHas r value
-rSetHas (RS (r : rs)) value
-  = rangeHas r value || rSetHas (RS rs) value
+rSetHas (RS ranges) v = rangeListHas ranges v
 
 (-?-) :: Ord a => DiscreteOrdered a => RSet a -> a -> Bool
 (-?-) rs = rSetHas rs

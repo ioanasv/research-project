@@ -88,6 +88,8 @@ prop_or_and_eqiv_false false false _ _ = refl
 
 
 postulate 
+   prop_logic4 : (a b : Bool) → IsFalse (a && b) -> IsTrue a → IsTrue (not b)
+   prop_logic5 : (a b : Bool) → IsFalse (a && b) -> IsFalse a → IsFalse (not b)
    isTrueAndIsFalse1 : {b : Bool} -> IsTrue b -> IsFalse (not b) 
    isTrueAndIsFalse2 : {b : Bool} -> IsTrue (not b) -> IsFalse b
    isTrueAndIsFalse3 : {b : Bool} -> IsFalse (not b) -> IsTrue b
@@ -104,6 +106,12 @@ postulate
     
    boundaries0 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (x : a) → (b c : Boundary a) → ((x />/ b) && (x />/ c)) ≡ (x />/ (max b c))
    boundaries1 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (x : a) → (b c : Boundary a) → ((x />/ b) || (x />/ c)) ≡ (x />/ (min b c))
+
+prop_logic0 : (a b : Bool) -> IsTrue a -> IsTrue (not b) -> a ≡ (not b) 
+prop_logic0 true false _ _ = refl 
+
+prop_logic0' : (a b : Bool) -> IsFalse a -> IsFalse (not b) -> a ≡ (not b) 
+prop_logic0' false true _ _ = refl 
 
 prop_and_assoc : (a b c : Bool) → ((a && b) && c) ≡ (a && (b && c))
 prop_and_assoc true b c = 
@@ -138,6 +146,12 @@ prop_or_sym true true = refl
 prop_or_sym true false = refl
 prop_or_sym false true = refl
 prop_or_sym false false = refl
+
+prop_and_sym : (a b : Bool) → (a && b) ≡ (b && a)
+prop_and_sym true true = refl
+prop_and_sym true false = refl
+prop_and_sym false true = refl
+prop_and_sym false false = refl
 
 prop_or_same_value : (a : Bool) → (a || a) ≡ a
 prop_or_same_value true = refl
@@ -185,6 +199,48 @@ prop_and_comm true b =
      (b && true)
    end
 
+prop_logic : (a b : Bool) → (a || (a || b)) ≡ (a || b)
+prop_logic true _ = refl
+prop_logic false false = refl
+prop_logic false true = refl
+
+
+prop_logic3 : (a b c d : Bool) → IsFalse (a && d) → ((a && c) || (b && (c || d))) ≡ ((a || b) && (c || d))
+-- prop_logic3 true true true true = refl
+prop_logic3 true true true false _ = refl
+-- prop_logic3 true false true true = refl
+prop_logic3 true false true false _  = refl
+-- prop_logic3 true true false true = refl
+prop_logic3 true true false false _ = refl
+prop_logic3 true false false false _ = refl
+prop_logic3 false true true true _ = refl
+prop_logic3 false true true false _ = refl
+prop_logic3 false true false true _ = refl 
+prop_logic3 false true false false _ = refl 
+prop_logic3 false false false true _ = refl 
+prop_logic3 false false false false _ = refl
+prop_logic3 false false true true _ = refl 
+prop_logic3 false false true false _ = refl
+-- prop_logic3 true false false true = refl
+
+prop_logic2 : (a b c d : Bool) → IsFalse(b && c) → ((a && c) || ((a || b) && d)) ≡ ((a || b) && (c || d))
+-- prop_logic2 true true true true = refl
+-- prop_logic2 true true true false = refl
+prop_logic2 true false true true _ = refl
+prop_logic2 true false true false _ = refl
+prop_logic2 true true false true _ = refl
+prop_logic2 true true false false _ = refl
+prop_logic2 true false false false _ = refl
+-- prop_logic2 false true true true = refl
+prop_logic2 false true false true _ = refl 
+prop_logic2 false true false false _ = refl 
+prop_logic2 false false false true _ = refl 
+prop_logic2 false false false false _ = refl
+prop_logic2 false false true true _ = refl 
+prop_logic2 false false true false _ = refl
+prop_logic2 true false false true _ = refl
+-- prop_logic2 false true true false = refl
+
 prop_distr : (a b c : Bool) → ((a || b) && c) ≡ ((a && c) || (b && c))
 prop_distr true b true = refl
 prop_distr true true false = refl
@@ -193,6 +249,25 @@ prop_distr false true true = refl
 prop_distr false true false = refl 
 prop_distr false false false = refl 
 prop_distr false false true = refl 
+
+prop_distr3 : (a b c : Bool) → ((a && b) || c) ≡ ((a || c) && (b || c))
+prop_distr3 true true true = refl
+prop_distr3 true false true = refl
+prop_distr3 true true false = refl
+prop_distr3 true false false = refl
+prop_distr3 false true true = refl
+prop_distr3 false true false = refl 
+prop_distr3 false false false = refl 
+prop_distr3 false false true = refl 
+
+prop_distr2 : (a b c : Bool) → (a || (b && c)) ≡ ((a || b) && (a || c))
+prop_distr2 true b true = refl
+prop_distr2 true true false = refl
+prop_distr2 true false false = refl
+prop_distr2 false true true = refl
+prop_distr2 false true false = refl 
+prop_distr2 false false false = refl 
+prop_distr2 false false true = refl 
 
 prop_dnf : (a b c d : Bool) → ((a || b) && (c || d)) ≡ ((a && c) || (b && d) || (b && c) || (a && d))
 prop_dnf true b true d = refl 

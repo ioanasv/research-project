@@ -128,15 +128,11 @@ rangeHas1 : ⦃  o : Ord a  ⦄ → ⦃  dio : DiscreteOrdered a  ⦄ → a → 
 rangeHas1 v r@(Rg b1 b2) = (v />/ b1) && not (v />/ b2)
 
 rangeListHas [] v = false
-rangeListHas (r@(Rg a b) ∷ []) v = rangeHas r v
-rangeListHas (r1@(Rg a1 b1) ∷ r2@(Rg a2 b2) ∷ []) v = (rangeHas r1 v) || (rangeHas r2 v)
-rangeListHas ls@(r1 ∷ r2 ∷ r3@(r4 ∷ rs)) v = (rangeHas r1 v) || (rangeListHas (r2 ∷ r3) v)
+rangeListHas (r1 ∷ r2) v = (rangeHas r1 v) || (rangeListHas r2 v)
 {-# COMPILE AGDA2HS rangeListHas #-}
 
 rangeListHas1 : ⦃  o : Ord a  ⦄ → ⦃  dio : DiscreteOrdered a  ⦄ → a → List (Range a) → Bool
-rangeListHas1 v (r@(Rg _ _) ∷ []) = rangeHas r v
-rangeListHas1 v (r1@(Rg _ _) ∷ r2@(Rg _ _) ∷ []) = (rangeHas r1 v) || (rangeHas r2 v)
-rangeListHas1 v ls = or $ map (\r → rangeHas r v) ls
+rangeListHas1 v ranges = rangeListHas ranges v
 
 fullRange ⦃ o ⦄ ⦃ dio ⦄ = Rg BoundaryBelowAll BoundaryAboveAll
 {-# COMPILE AGDA2HS fullRange #-}
