@@ -23,11 +23,11 @@ open import RangedSetsProp.BoundariesProperties
 open import RangedSetsProp.library
 
 postulate 
-  prop_range_creation : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → {r1 r2 : Boundary a} →  
-                        {r3 r4 : Boundary a} → (r1 ≡ r3) → (r2 ≡ r4) → (Rg r1 r2) ≡ Rg r3 r4
+  prop_range_creation : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → {r1 r2 : Boundary a}
+    → {r3 r4 : Boundary a} → (r1 ≡ r3) → (r2 ≡ r4) → (Rg r1 r2) ≡ Rg r3 r4
 
-prop_intersection_sym : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (r1 : Range a) → (r2 : Range a) → 
-                        rangeIntersection r1 r2 ≡ rangeIntersection r2 r1
+prop_intersection_sym : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (r1 : Range a) → (r2 : Range a) 
+  → rangeIntersection r1 r2 ≡ rangeIntersection r2 r1
 prop_intersection_sym ⦃ o ⦄ ⦃ dio ⦄ r1@(Rg l1 u1) r2@(Rg l2 u2) = 
    begin
       rangeIntersection r1 r2
@@ -41,7 +41,6 @@ prop_intersection_sym ⦃ o ⦄ ⦃ dio ⦄ r1@(Rg l1 u1) r2@(Rg l2 u2) =
      =⟨⟩
       rangeIntersection r2 r1
    end
-
 
 prop_singletonRangeHas : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (x : a) → (rangeHas ⦃ o ⦄ (singletonRange x) x) ≡ true
 prop_singletonRangeHas ⦃ o ⦄ ⦃ dio ⦄ x = 
@@ -93,18 +92,15 @@ prop_emptyNonSingleton = refl
 prop_fullNonSingleton : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → rangeSingletonValue ⦃ o ⦄ ⦃ dio ⦄ fullRange ≡ Nothing
 prop_fullNonSingleton = refl
 
-rs : Double → Double → List (Range Double)
-rs x y = (Rg (BoundaryBelow x) (BoundaryBelow y)) ∷ (Rg (BoundaryAbove x) (BoundaryBelow y)) ∷ (Rg (BoundaryBelow x) (BoundaryAbove y)) ∷ (Rg (BoundaryAbove x) (BoundaryAbove y)) ∷ []
-
 length' : List a → Nat 
 length' [] = 0
 length' (x ∷ []) = 1
 length' (x ∷ xs) = 1 + (length' xs)
 
 prop_unionRangeLengthHelper3 : ⦃ ord : Ord a ⦄ → ⦃ diso : DiscreteOrdered a ⦄ 
-                 → (r1 r2 : (Range a)) → (b : Bool) 
-                 → ((eqq ((length' (if_then_else_ b ((Rg (min (rangeLower r1) (rangeLower r2)) (max (rangeUpper r1) (rangeUpper r2))) ∷ []) (r1 ∷ r2 ∷ [])))) 1) 
-                 || (eqq (length' ((if_then_else_ b ((Rg (min (rangeLower r1) (rangeLower r2)) (max (rangeUpper r1) (rangeUpper r2))) ∷ []) (r1 ∷ r2 ∷ [])))) 2)) ≡ true
+  → (r1 r2 : (Range a)) → (b : Bool) 
+  → ((eqq ((length' (if_then_else_ b ((Rg (min (rangeLower r1) (rangeLower r2)) (max (rangeUpper r1) (rangeUpper r2))) ∷ []) (r1 ∷ r2 ∷ [])))) 1) 
+    || (eqq (length' ((if_then_else_ b ((Rg (min (rangeLower r1) (rangeLower r2)) (max (rangeUpper r1) (rangeUpper r2))) ∷ []) (r1 ∷ r2 ∷ [])))) 2)) ≡ true
 prop_unionRangeLengthHelper3 ⦃ o ⦄ ⦃ dio ⦄ r1@(Rg l1 u1) r2@(Rg l2 u2) true = 
   begin 
     ((eqq (length' ((Rg (min l1 l2) (max u1 u2)) ∷ [])) 1) || (eqq (length' ((Rg (min l1 l2) (max u1 u2)) ∷ [])) 2))
@@ -127,8 +123,8 @@ prop_unionRangeLengthHelper3 ⦃ o ⦄ ⦃ dio ⦄ r1@(Rg l1 u1) r2@(Rg l2 u2) f
    end 
 
 prop_unionRangeLengthHelper2 : ⦃ ord : Ord a ⦄ → ⦃ diso : DiscreteOrdered a ⦄ 
-                 → (r1 r2 : (Range a)) → (b : Bool) 
-                 → ((eqq (length' (if_then_else_ b (r1 ∷ []) (rangeU2 r1 r2))) 1) || (eqq (length' ((if_then_else_ b (r1 ∷ []) (rangeU2 r1 r2)))) 2)) ≡ true
+  → (r1 r2 : (Range a)) → (b : Bool) 
+  → ((eqq (length' (if_then_else_ b (r1 ∷ []) (rangeU2 r1 r2))) 1) || (eqq (length' ((if_then_else_ b (r1 ∷ []) (rangeU2 r1 r2)))) 2)) ≡ true
 prop_unionRangeLengthHelper2 ⦃ o ⦄ ⦃ dio ⦄ r1@(Rg l1 u1) r2@(Rg l2 u2) true = 
     begin
      ((eqq (length' (r1 ∷ [])) 1) || (eqq (length' (r1 ∷ [])) 2))
@@ -185,9 +181,9 @@ prop_unionRangeLength ⦃ o ⦄ ⦃ dio ⦄ r1@(Rg l1 u1) r2@(Rg l2 u2) =
 
 
 prop_UnionRange1 : ⦃ ord : Ord a ⦄ → ⦃ diso : DiscreteOrdered a ⦄ 
-                 → (r1 r2 : (Range a)) → ⦃ ne1 : IsFalse (rangeIsEmpty r1) ⦄ → ⦃ ne2 : IsFalse (rangeIsEmpty r2) ⦄
-                 → ⦃ ne3 : IsFalse ((max (rangeLower r1) (rangeLower r2)) <= (min (rangeUpper r1) (rangeUpper r2))) ⦄ → (n : a) 
-                 → (rangeListHas1 n (rangeUnion ⦃ ord ⦄ ⦃ diso ⦄ r1 r2)) ≡ ((rangeHas ⦃ ord ⦄ r1 n) || (rangeHas ⦃ ord ⦄ r2 n)) 
+  → (r1 r2 : (Range a)) → ⦃ ne1 : IsFalse (rangeIsEmpty r1) ⦄ → ⦃ ne2 : IsFalse (rangeIsEmpty r2) ⦄
+  → ⦃ ne3 : IsFalse ((max (rangeLower r1) (rangeLower r2)) <= (min (rangeUpper r1) (rangeUpper r2))) ⦄ → (n : a) 
+  → (rangeListHas1 n (rangeUnion ⦃ ord ⦄ ⦃ diso ⦄ r1 r2)) ≡ ((rangeHas ⦃ ord ⦄ r1 n) || (rangeHas ⦃ ord ⦄ r2 n)) 
 prop_UnionRange1 ⦃ ord ⦄ ⦃ diso ⦄ r1@(Rg l1 u1) r2@(Rg l2 u2) ⦃ ne1 ⦄ ⦃ ne2 ⦄ ⦃ ne3 ⦄ n = 
    begin
      (rangeListHas1 n (rangeUnion r1 r2))
@@ -207,31 +203,6 @@ prop_UnionRange1 ⦃ ord ⦄ ⦃ diso ⦄ r1@(Rg l1 u1) r2@(Rg l2 u2) ⦃ ne1 �
      ((rangeHas r1 n) || (rangeHas r2 n))      
    end
 
--- prop_UnionRange1' : ⦃ ord : Ord a ⦄ → ⦃ diso : DiscreteOrdered a ⦄ 
---                  → (r1 r2 : (Range a)) → ⦃ne1 : IsFalse (rangeIsEmpty r1)⦄ → ⦃ne2 : IsFalse (rangeIsEmpty r2)⦄
---                  → ⦃ne3 : IsTrue ((max (rangeLower r1) (rangeLower r2)) <= (min (rangeUpper r1) (rangeUpper r2)))⦄ → (n : a) 
---                  → (rangeListHas1 n (rangeUnion ⦃ord⦄ ⦃diso⦄ r1 r2)) ≡ ((rangeHas ⦃ord⦄ r1 n) || (rangeHas ⦃ord⦄ r2 n)) 
--- prop_UnionRange1' ⦃ord⦄ ⦃diso⦄ r1@(Rg l1 u1) r2@(Rg l2 u2) ⦃ne1⦄ ⦃ne2⦄ ⦃ne3⦄ n = 
---    begin
---      (rangeListHas1 n (rangeUnion r1 r2))
---    =⟨⟩
---      (rangeListHas1 n (if_then_else_ (rangeIsEmpty r1) (r2 ∷ []) (rangeU1 r1 r2)))
---    =⟨ propIf (rangeListHas1 n) (rangeIsEmpty r1) ⟩
---      if_then_else_ (rangeIsEmpty r1) (rangeListHas1 n (r2 ∷ [])) (rangeListHas1 n (rangeU1 r1 r2))
---    =⟨ propIf3 (rangeIsEmpty r1) ne1 ⟩
---      rangeListHas1 n (rangeU1 r1 r2) 
---    =⟨ cong (rangeListHas1 n) (propIf3 (rangeIsEmpty r2) ne2) ⟩
---      (rangeListHas1 n (rangeU2 r1 r2))
---    =⟨ cong (rangeListHas1 n) (propIf2 ((max l1 l2) <= (min u1 u2)) ne3) ⟩  
---      (rangeListHas1 n ((Rg (min l1 l2) (max u1 u2)) ∷ []))
---    =⟨⟩  
---     ((n />/ (min l1 l2)) && not (n />/ (max u1 u2)))
---    =⟨⟩  
---     ((n />/ (if (compare l1 l2 == LT) then l1 else l2)) && not (n />/ (if (compare u1 u2 == GT) then u1 else u2)))    
---    =⟨⟩  
---      ((rangeHas r1 n) || (rangeHas r2 n))
---    end
-
 prop_emptyRange : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (r : Range a) → not (rangeIsEmpty r) ≡ (rangeLower r <= rangeUpper r)
 prop_emptyRange ⦃ o ⦄ ⦃ dio ⦄ r@(Rg l u) = 
   begin 
@@ -244,8 +215,7 @@ prop_emptyRange ⦃ o ⦄ ⦃ dio ⦄ r@(Rg l u) =
     l <= u
   end 
 
-prop_rangeHas : ⦃ ord : Ord a ⦄ → ⦃ diso : DiscreteOrdered a ⦄ → {r : (Range a)} → {n : a} 
-                        → (rangeHas1 ⦃ ord ⦄ n r) ≡ (rangeHas ⦃ ord ⦄ r n)
+prop_rangeHas : ⦃ ord : Ord a ⦄ → ⦃ diso : DiscreteOrdered a ⦄ → {r : (Range a)} → {n : a} → (rangeHas1 ⦃ ord ⦄ n r) ≡ (rangeHas ⦃ ord ⦄ r n)
 prop_rangeHas {r = (Rg x y)} {n} = 
    begin
      rangeHas1 n (Rg x y)
@@ -256,9 +226,8 @@ prop_rangeHas {r = (Rg x y)} {n} =
    end
 
 prop_IntersectionRange : ⦃ ord : Ord a ⦄ → ⦃ diso : DiscreteOrdered a ⦄ → (r1 r2 : (Range a)) 
-                        → ⦃ ff : IsFalse (rangeIsEmpty r1 || rangeIsEmpty r2) ⦄  → (n : a) 
-                        → ((rangeHas r1 n) && (rangeHas r2 n)) ≡ (rangeHas (rangeIntersection r1 r2) n)
-
+  → ⦃ ff : IsFalse (rangeIsEmpty r1 || rangeIsEmpty r2) ⦄  → (n : a) 
+  → ((rangeHas r1 n) && (rangeHas r2 n)) ≡ (rangeHas (rangeIntersection r1 r2) n)
 prop_IntersectionRange ⦃ ord ⦄ ⦃ diso ⦄ r1@(Rg x1 y1) r2@(Rg x2 y2) ⦃ ff ⦄ n = 
    begin
      ((rangeHas r1 n) && (rangeHas r2 n))
@@ -292,7 +261,7 @@ prop_IntersectionRange ⦃ ord ⦄ ⦃ diso ⦄ r1@(Rg x1 y1) r2@(Rg x2 y2) ⦃ 
 
 
 prop_notEmptyRanges : ⦃ ord : Ord a ⦄ → ⦃ diso : DiscreteOrdered a ⦄ → (r1 r2 : (Range a)) 
-                    → (not ((rangeIsEmpty r1) || (rangeIsEmpty r2))) ≡ (((rangeLower r1) < (rangeUpper r1)) && ((rangeLower r2) < (rangeUpper r2)))
+  → (not ((rangeIsEmpty r1) || (rangeIsEmpty r2))) ≡ (((rangeLower r1) < (rangeUpper r1)) && ((rangeLower r2) < (rangeUpper r2)))
 prop_notEmptyRanges ⦃ ord ⦄ ⦃ diso ⦄ r1@(Rg l1 u1) r2@(Rg l2 u2) = 
    begin
       not ((rangeIsEmpty r1 )|| (rangeIsEmpty r2))
@@ -307,11 +276,11 @@ prop_notEmptyRanges ⦃ ord ⦄ ⦃ diso ⦄ r1@(Rg l1 u1) r2@(Rg l2 u2) =
     end
 
 
-prop_intersectionOverlap : ⦃ ord : Ord a ⦄ → ⦃ diso : DiscreteOrdered a ⦄ → (r1 r2 : (Range a)) 
-                            → ⦃ ff : IsFalse (rangeIsEmpty r1 || rangeIsEmpty r2) ⦄
-                            → ⦃ tr : IsTrue (((rangeLower r1) < (rangeUpper r1)) && ((rangeLower r2) < (rangeUpper r2))) ⦄
-                            → (rangeIsEmpty (rangeIntersection r1 r2)) ≡ not (rangeOverlap r1 r2)
-prop_intersectionOverlap ⦃ ord ⦄ ⦃ diso ⦄ r1@(Rg _ _) r2@(Rg _ _) ⦃ ff ⦄ ⦃ tr ⦄ =
+prop_intersectionOverlap1 : ⦃ ord : Ord a ⦄ → ⦃ diso : DiscreteOrdered a ⦄ → (r1 r2 : (Range a)) 
+  → ⦃ ff : IsFalse (rangeIsEmpty r1 || rangeIsEmpty r2) ⦄
+  → ⦃ tr : IsTrue (((rangeLower r1) < (rangeUpper r1)) && ((rangeLower r2) < (rangeUpper r2))) ⦄
+  → (rangeIsEmpty (rangeIntersection r1 r2)) ≡ not (rangeOverlap r1 r2)
+prop_intersectionOverlap1 ⦃ ord ⦄ ⦃ diso ⦄ r1@(Rg _ _) r2@(Rg _ _) ⦃ ff ⦄ ⦃ tr ⦄ =
    begin
      (rangeIsEmpty (rangeIntersection r1 r2))
    =⟨⟩
@@ -338,3 +307,32 @@ prop_intersectionOverlap ⦃ ord ⦄ ⦃ diso ⦄ r1@(Rg _ _) r2@(Rg _ _) ⦃ ff
      not (rangeOverlap r1 r2)
    end
 
+prop_rangeoverlap_empty : ⦃ ord : Ord a ⦄ → ⦃ diso : DiscreteOrdered a ⦄ → (r1 r2 : (Range a)) 
+  → ⦃ ff : IsTrue (rangeIsEmpty r1 || rangeIsEmpty r2) ⦄ → (rangeOverlap r1 r2) ≡ false
+prop_rangeoverlap_empty ⦃ ord ⦄ ⦃ diso ⦄ r1@(Rg _ _) r2@(Rg _ _) ⦃ ff ⦄ = 
+   begin
+     (rangeOverlap r1 r2)
+   =⟨⟩
+     (not (rangeIsEmpty r1) && not (rangeIsEmpty r2) && not (rangeUpper r1 <= rangeLower r2 || rangeUpper r2 <= rangeLower r1)) 
+   =⟨ propIsFalse (not (rangeIsEmpty r1) && not (rangeIsEmpty r2) && not (rangeUpper r1 <= rangeLower r2 || rangeUpper r2 <= rangeLower r1))
+    (prop_logic6 (rangeIsEmpty r1) (rangeIsEmpty r2) ff) ⟩
+     false
+   end
+
+prop_intersectionOverlap2 : ⦃ ord : Ord a ⦄ → ⦃ diso : DiscreteOrdered a ⦄ → (r1 r2 : (Range a)) 
+  → ⦃ ff : IsTrue (rangeIsEmpty r1 || rangeIsEmpty r2) ⦄
+  → (rangeIsEmpty (rangeIntersection r1 r2)) ≡ not (rangeOverlap r1 r2)
+prop_intersectionOverlap2 ⦃ ord ⦄ ⦃ diso ⦄ r1@(Rg _ _) r2@(Rg _ _) ⦃ ff ⦄ =
+   begin
+     (rangeIsEmpty (rangeIntersection r1 r2))
+   =⟨⟩
+     rangeIsEmpty (if_then_else_ (rangeIsEmpty r1 || rangeIsEmpty r2) emptyRange (Rg (max (rangeLower r1) (rangeLower r2)) (min (rangeUpper r1) (rangeUpper r2)))) 
+   =⟨ cong rangeIsEmpty (propIf2 (rangeIsEmpty r1 || rangeIsEmpty r2) ff) ⟩
+     (rangeIsEmpty ⦃ ord ⦄ ⦃ diso ⦄ emptyRange)
+   =⟨⟩
+     true
+   =⟨⟩  
+     not false
+   =⟨ cong not (sym (prop_rangeoverlap_empty r1 r2 ⦃ ff ⦄)) ⟩
+     not (rangeOverlap r1 r2)
+   end

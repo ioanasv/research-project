@@ -13,4 +13,5 @@ build:
 haskell: build
 	ghc -fno-code src/RangedSets/DiscreteOrdered.hs
 	ghc -fno-code src/RangedSets/Boundaries.hs
+	ghc -fno-code src/RangedSets/Ranges.hs	
 	ghc -fno-code src/RangedSets/RangedSet.hs

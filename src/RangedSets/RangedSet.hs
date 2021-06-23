@@ -1,7 +1,9 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE DatatypeContexts #-}
 
 module RangedSets.RangedSet where
+
 
 
 

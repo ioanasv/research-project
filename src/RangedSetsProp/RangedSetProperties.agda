@@ -29,8 +29,7 @@ prop_empty v = refl
 prop_full : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (v : a) → (rSetHas rSetFull v) ≡ true
 prop_full v = refl
 
-prop_validNormalised : ⦃ o : Ord a ⦄ → ⦃ d : DiscreteOrdered a ⦄ → (ls : List (Range a)) 
-   → (validRangeList (normaliseRangeList ls)) ≡ true
+prop_validNormalised : ⦃ o : Ord a ⦄ → ⦃ d : DiscreteOrdered a ⦄ → (ls : List (Range a)) → (validRangeList (normaliseRangeList ls)) ≡ true
 prop_validNormalised ⦃ o ⦄ ⦃ dio ⦄ [] = refl  
 prop_validNormalised ⦃ o ⦄ ⦃ dio ⦄ ls@(r1 ∷ rs) = 
   begin 
@@ -70,23 +69,18 @@ rSetHasHelper : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → a → 
 rSetHasHelper ⦃  o  ⦄ ⦃ dio ⦄ value rs {prf} = rSetHas ⦃ o ⦄ ⦃ dio ⦄ (RS rs {prf}) value
 
 postulate
-  -- the following postulates hold when the boundaries are ordered
+  -- the following postulates are used only when the boundaries are ordered
   emptyIntersection : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (b1 b2 b3 : Boundary a)
-              → IsFalse (rangeIsEmpty (rangeIntersection (Rg b2 b3) (Rg b1 b2)) == false)
-
+    → IsFalse (rangeIsEmpty (rangeIntersection (Rg b2 b3) (Rg b1 b2)) == false)
   emptyIntersection2 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (b1 b2 b3 : Boundary a)
-              → IsFalse (rangeIsEmpty (rangeIntersection (Rg b1 b2) (Rg b2 b3)) == false)           
-   
-  orderedBoundaries2 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (b1 b2 : Boundary a)
-            → IsFalse (b2 < b1) 
+    → IsFalse (rangeIsEmpty (rangeIntersection (Rg b1 b2) (Rg b2 b3)) == false)           
+  orderedBoundaries2 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (b1 b2 : Boundary a) → IsFalse (b2 < b1) 
   -- used for easing the proofs, the true value should be IsTrue (b1 <= b2)                       
-  orderedBoundaries3 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (b1 b2 : Boundary a)
-            → IsTrue (b1 < b2)               
+  orderedBoundaries3 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (b1 b2 : Boundary a) → IsTrue (b1 < b2)               
          
 {-# TERMINATING #-}
 lemma0 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs : RSet a) 
-    → {prf : IsTrue (validRangeList (rSetRanges rs))}
-    → (ranges1 (bounds1 (rSetRanges rs))) ≡ (rSetRanges rs)
+  → {prf : IsTrue (validRangeList (rSetRanges rs))} → (ranges1 (bounds1 (rSetRanges rs))) ≡ (rSetRanges rs)
 lemma0 ⦃ o ⦄ ⦃ dio ⦄ rs@(RS []) {_} = 
     begin
       (ranges1 ⦃ o ⦄ ⦃ dio ⦄ (bounds1 ⦃ o ⦄ ⦃ dio ⦄ (rSetRanges rs)))
@@ -158,10 +152,9 @@ rangeEmpty ⦃ o ⦄ ⦃ dio ⦄ b@(BoundaryAbove m) =
 
 
 merge2Empty : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (bs : List (Boundary a)) → ⦃ ne : NonEmpty bs ⦄
-          → filter (λ x → rangeIsEmpty x == false) (merge2 (ranges1 (tail bs ⦃ ne ⦄)) (ranges1 bs)) ≡ []
-
+  → filter (λ x → rangeIsEmpty x == false) (merge2 (ranges1 (tail bs ⦃ ne ⦄)) (ranges1 bs)) ≡ []
 merge2Empty2 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (bs : List (Boundary a)) → ⦃ ne : NonEmpty bs ⦄
-          → filter (λ x → rangeIsEmpty x == false) (merge2 (ranges1 bs) (ranges1 (tail bs ⦃ ne ⦄))) ≡ []  
+  → filter (λ x → rangeIsEmpty x == false) (merge2 (ranges1 bs) (ranges1 (tail bs ⦃ ne ⦄))) ≡ []  
 merge2Empty2 ⦃ o ⦄ ⦃ dio ⦄ bounds@(b@(BoundaryAboveAll) ∷ []) ⦃ ne ⦄ = 
     begin
       filter (λ x → rangeIsEmpty ⦃ o ⦄ ⦃ dio ⦄ x == false) (merge2 (ranges1 bounds) (ranges1 (tail bounds ⦃ ne ⦄)))
@@ -701,7 +694,7 @@ merge2Empty ⦃ o ⦄ ⦃ dio ⦄ bounds@(b1 ∷ b2@(BoundaryBelow x) ∷ bs@(b3
 
 
 lemma2 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (bs : List (Boundary a)) 
-               → (filter (λ x → rangeIsEmpty x == false) (merge2 (ranges1 bs) (ranges1 (setBounds1 bs)))) ≡ []
+  → (filter (λ x → rangeIsEmpty x == false) (merge2 (ranges1 bs) (ranges1 (setBounds1 bs)))) ≡ []
 lemma2 ⦃ o ⦄ ⦃ dio ⦄ [] =
     begin
       (filter (λ x → rangeIsEmpty ⦃ o ⦄ ⦃ dio ⦄ x == false) (merge2 (ranges1 []) (ranges1 (setBounds1 []))))
@@ -1023,7 +1016,6 @@ lemma2 ⦃ o ⦄ ⦃ dio ⦄ bs@(a@(BoundaryBelowAll) ∷ b@(BoundaryBelow x) �
 merge2' : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → List (Range a) → List (Range a) → List (Range a)
 merge2' ms1 ms2 = merge2 ms2 ms1
 
-
 prop_empty_intersection : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs : RSet a)
   → {prf : IsTrue (validRangeList (rSetRanges rs))} → rSetIsEmpty (rSetIntersection rs (rSetNegation rs)) ≡ true
 prop_empty_intersection ⦃ o ⦄ ⦃ dio ⦄ rs@(RS ranges) {prf} =
@@ -1072,8 +1064,6 @@ prop_empty_intersection_does_not_contain_anything {{ o }} {{ dio }} rs@(RS range
 
 prop_empty_intersection_does_not_contain_anything_isFalse : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs : RSet a) → (v : a) → IsFalse ((rSetIntersection rs (rSetNegation rs)) -?- v)
 prop_empty_intersection_does_not_contain_anything_isFalse {{o}} {{dio}} rs v = subst IsFalse (sym (prop_empty_intersection_does_not_contain_anything rs v)) IsFalse.itsFalse
-
-
 
 prop_subset : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs : RSet a)
   → {prf : IsTrue (validRangeList (rSetRanges rs))} → rSetIsSubset rs rs ≡ true
@@ -1136,10 +1126,10 @@ prop_rsethas ⦃ o ⦄ ⦃ dio ⦄ rs@(RS ranges) v = refl
 
 postulate 
   rsetHasNormalised : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs1 : List (Range a)) → (v : a) 
-                    → (prf1 : IsTrue (sortedRangeList rs1)) → (prf2 : IsTrue (validRanges rs1)) 
-                    → rangeListHas (normalise rs1 ⦃ prf1 ⦄ ⦃ prf2 ⦄) v ≡ rangeListHas rs1 v
+    → (prf1 : IsTrue (sortedRangeList rs1)) → (prf2 : IsTrue (validRanges rs1)) 
+    → rangeListHas (normalise rs1 ⦃ prf1 ⦄ ⦃ prf2 ⦄) v ≡ rangeListHas rs1 v
   rsetHasFiltered : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs1 : List (Range a)) → (v : a) 
-                    → rangeListHas ((filter (λ x → rangeIsEmpty ⦃ o ⦄ ⦃ dio ⦄ x == false)) rs1) v ≡ rangeListHas rs1 v                  
+    → rangeListHas ((filter (λ x → rangeIsEmpty ⦃ o ⦄ ⦃ dio ⦄ x == false)) rs1) v ≡ rangeListHas rs1 v                  
 
 prop_merge1has : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (ls1 ls2 : List (Range a))
   → (v : a) → rangeListHas (merge1 ls1 ls2) v ≡ ((rangeListHas ls1 v) || (rangeListHas ls2 v))
@@ -1266,8 +1256,7 @@ prop_merge2hasHelper ⦃ o ⦄ ⦃ dio ⦄ ls1@(h1 ∷ t1) ls2@(h2 ∷ t2) v tru
    end 
 
 
-prop_union : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs1 rs2 : RSet a)
-  → (v : a) → (rSetHas (rSetUnion rs1 rs2) v) ≡ (rSetHas rs1 v || rSetHas rs2 v)
+prop_union : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs1 rs2 : RSet a) → (v : a) → (rSetHas (rSetUnion rs1 rs2) v) ≡ (rSetHas rs1 v || rSetHas rs2 v)
 prop_union ⦃ o ⦄ ⦃ dio ⦄ rs1@(RS []) rs2@(RS []) v = refl            
 prop_union ⦃ o ⦄ ⦃ dio ⦄ rs1@(RS ls1 {prf1}) rs2@(RS ls2 {prf2}) v = 
    begin

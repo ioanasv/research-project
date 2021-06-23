@@ -21,6 +21,7 @@ open import RangedSetsProp.BoundariesProperties
 {-# FOREIGN AGDA2HS
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE DatatypeContexts #-}
 import RangedSets.DiscreteOrdered
 import RangedSets.Boundaries
 import RangedSets.Ranges
@@ -49,7 +50,7 @@ validRangeList (x ∷ rs@(r1 ∷ rss)) = (okAdjacent x r1) && (validRangeList rs
 {-# COMPILE AGDA2HS validRangeList #-}
 
 data RSet (a : Set) ⦃ o : Ord a ⦄ ⦃ dio : DiscreteOrdered a ⦄ : Set where
-    RS : (rg : List (Range a)) → {IsTrue (validRangeList rg)} → RSet a
+   RS : (rg : List (Range a)) → {IsTrue (validRangeList rg)} → RSet a
 -- {-# COMPILE AGDA2HS RSet deriving (Show, Eq) #-}
 {-# FOREIGN AGDA2HS
 data DiscreteOrdered a => RSet a = RS {rSetRanges :: [Range a]}
@@ -60,44 +61,35 @@ rSetRanges : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → RSet a �
 rSetRanges (RS ranges) = ranges
 -- {-# COMPILE AGDA2HS rSetRanges #-}
 
-overlap1 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → Range a → Range a → Bool
-overlap1 (Rg _ upper1) (Rg lower2 _) = (upper1 >= lower2)
-{-# COMPILE AGDA2HS overlap1 #-}
-
 sortedRangeList : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → List (Range a) → Bool
 sortedRangeList [] = true 
 sortedRangeList (r ∷ []) = true 
-sortedRangeList (r1 ∷ r2 ∷ rs) = (rangeLower r1 <= rangeLower r2 && rangeUpper r1 <= rangeUpper r2) && (sortedRangeList (r2 ∷ rs))
+sortedRangeList (r1 ∷ r2 ∷ rs) = (rangeLower r1 <= rangeLower r2) && (sortedRangeList (r2 ∷ rs))
 
 validRanges : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → List (Range a) → Bool
 validRanges [] = true 
 validRanges (r ∷ rs) = (rangeLower r <= rangeUpper r) && (validRanges rs)
 
 headandtailSorted : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs : List (Range a)) 
-      → ⦃ ne : NonEmpty rs ⦄ → (IsTrue (sortedRangeList rs)) 
-      → (IsTrue (sortedRangeList (tail rs ⦃ ne ⦄)))     
+   → ⦃ ne : NonEmpty rs ⦄ → (IsTrue (sortedRangeList rs)) → (IsTrue (sortedRangeList (tail rs ⦃ ne ⦄)))     
 headandtailValidRanges : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs : List (Range a)) 
-      → ⦃ ne : NonEmpty rs ⦄ → (IsTrue (validRanges rs)) 
-      → (IsTrue (validRanges (tail rs ⦃ ne ⦄)))
+   → ⦃ ne : NonEmpty rs ⦄ → (IsTrue (validRanges rs)) → (IsTrue (validRanges (tail rs ⦃ ne ⦄)))
 
-postulate
-   sortedListComposed : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄
-      → (r1 r2 : Range a) → (ranges : List (Range a))
-      → IsTrue (sortedRangeList (r1 ∷ r2 ∷ ranges))
-      → IsTrue (sortedRangeList ((Rg (rangeLower r1) (max (rangeUpper r1) (rangeUpper r2))) ∷ ranges))
-
+sortedListComposed : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄
+   → (r1 r2 : Range a) → (ranges : List (Range a)) → IsTrue (sortedRangeList (r1 ∷ r2 ∷ ranges))
+   → IsTrue (sortedRangeList ((Rg (rangeLower r1) (max (rangeUpper r1) (rangeUpper r2))) ∷ ranges))
 validRangesComposed : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄
-   → (r1 r2 : Range a) → (ranges : List (Range a))
-   → IsTrue (sortedRangeList (r1 ∷ r2 ∷ ranges))
-   → IsTrue (validRanges (r1 ∷ r2 ∷ ranges))
+   → (r1 r2 : Range a) → (ranges : List (Range a)) → IsTrue (sortedRangeList (r1 ∷ r2 ∷ ranges)) → IsTrue (validRanges (r1 ∷ r2 ∷ ranges))
    → IsTrue (validRanges ((Rg (rangeLower r1) (max (rangeUpper r1) (rangeUpper r2))) ∷ ranges))
 
+overlap1 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → Range a → Range a → Bool
+overlap1 (Rg _ upper1) (Rg lower2 _) = (upper1 >= lower2)
+{-# COMPILE AGDA2HS overlap1 #-}
 -- Private routine: normalise a range list that is known to be already sorted.
 normalise : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rg : List (Range a)) 
    → ⦃ IsTrue (sortedRangeList rg) ⦄ → ⦃ IsTrue (validRanges rg) ⦄ → List (Range a)
 normalise (r1 ∷ r2 ∷ rs) ⦃ prf ⦄ ⦃ prf2 ⦄ = 
-   if_then_else_ (overlap1 r1 r2) 
-      (normalise ((Rg (rangeLower r1) (max (rangeUpper r1) (rangeUpper r2))) ∷ rs) 
+   if_then_else_ (overlap1 r1 r2) (normalise ((Rg (rangeLower r1) (max (rangeUpper r1) (rangeUpper r2))) ∷ rs) 
       ⦃ sortedListComposed r1 r2 rs prf ⦄ ⦃ validRangesComposed r1 r2 rs prf prf2 ⦄ ) 
          (r1 ∷ (normalise (r2 ∷ rs) ⦃ headandtailSorted (r1 ∷ r2 ∷ rs) prf ⦄ ⦃ headandtailValidRanges (r1 ∷ r2 ∷ rs) prf2 ⦄ ))
 normalise rs = rs
@@ -121,18 +113,14 @@ unsafeRangedSet rs ⦃ prf ⦄  = RS rs {prf}
 
 -- useful proof
 headandtail : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs : RSet a) 
-      → ⦃ ne : NonEmpty (rSetRanges rs) ⦄ → (IsTrue (validRangeList (rSetRanges rs))) 
-      → (IsTrue (validRangeList (tail (rSetRanges rs) ⦃ ne ⦄)))   
+   → ⦃ ne : NonEmpty (rSetRanges rs) ⦄ → (IsTrue (validRangeList (rSetRanges rs))) → (IsTrue (validRangeList (tail (rSetRanges rs) ⦃ ne ⦄)))   
 -- instance of IsTrue for validRangeList (normalise list)
 normalisedSortedList : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ 
-  → (ms : List (Range a))
-  → (prf : IsTrue (sortedRangeList ms)) 
-  → (prf2 : IsTrue (validRanges ms))
-  → IsTrue (validRangeList (normalise ms ⦃ prf ⦄ ⦃ prf2 ⦄))
+  → (ms : List (Range a))→ (prf : IsTrue (sortedRangeList ms)) 
+  → (prf2 : IsTrue (validRanges ms)) → IsTrue (validRangeList (normalise ms ⦃ prf ⦄ ⦃ prf2 ⦄))
 
 -- the empty range list is a valid range list                  
 empty : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → IsTrue (validRangeList ⦃ o ⦄ ⦃ dio ⦄ [])
-
 -- invariant proof that the singletonRange is valid 
 singletonRangeValid : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (x : a) → IsTrue (validRangeList ((singletonRange x) ∷ [])) 
 -- | Create a Ranged Set from a single element.
@@ -195,8 +183,7 @@ ranges1 _ = []
 
 -- the following method proves that negation outputs a valid range list
 negation : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs : RSet a)
-   → (IsTrue (validRangeList (rSetRanges rs))) 
-   → (IsTrue (validRangeList (ranges1 (setBounds1 (bounds1 (rSetRanges rs))))))
+   → (IsTrue (validRangeList (rSetRanges rs))) → (IsTrue (validRangeList (ranges1 (setBounds1 (bounds1 (rSetRanges rs))))))
 rSetNegation : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rg : RSet a) → RSet a
 rSetNegation ⦃ o ⦄ ⦃ dio ⦄ set@(RS ranges {prf}) = 
    RS (ranges1 (setBounds1 (bounds1 ranges))) {negation set prf}
@@ -237,48 +224,36 @@ merge1 ms1@(h1 ∷ t1) ms2@(h2 ∷ t2) = if_then_else_ (h1 < h2) (h1 ∷ (merge1
 -- the following three proofs prove that the invariant holds for the union method
 -- proof that merge1 outputs valid ranges
 merge1HasValidRanges : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄
-   → (rs1 rs2 : RSet a)
-   → IsTrue (validRanges (merge1 (rSetRanges rs1) (rSetRanges rs2))) 
+   → (rs1 rs2 : RSet a) → IsTrue (validRanges (merge1 (rSetRanges rs1) (rSetRanges rs2))) 
 -- proof that merge1 outputs a sorted range list
 merge1Sorted : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs1 rs2 : RSet a) 
    → IsTrue (sortedRangeList (merge1 (rSetRanges rs1) (rSetRanges rs2)))
 -- union of two valid ranged sets is also valid range set
 unionHolds : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs1 rs2 : RSet a)
-   → IsTrue (validRangeList (normalise (merge1 (rSetRanges rs1) (rSetRanges rs2))
-          ⦃ merge1Sorted rs1 rs2 ⦄ ⦃ merge1HasValidRanges rs1 rs2 ⦄)) 
-unionHolds ⦃ o ⦄ ⦃ dio ⦄ rs1 rs2 = normalisedSortedList 
-   (merge1 (rSetRanges rs1) (rSetRanges rs2)) (merge1Sorted rs1 rs2) 
-      (merge1HasValidRanges rs1 rs2)      
+   → IsTrue (validRangeList (normalise (merge1 (rSetRanges rs1) (rSetRanges rs2)) ⦃ merge1Sorted rs1 rs2 ⦄ ⦃ merge1HasValidRanges rs1 rs2 ⦄)) 
+unionHolds ⦃ o ⦄ ⦃ dio ⦄ rs1 rs2 = normalisedSortedList (merge1 (rSetRanges rs1) (rSetRanges rs2)) (merge1Sorted rs1 rs2) (merge1HasValidRanges rs1 rs2)      
 -- | Set union for ranged sets.  Infix precedence is left 6.
 rSetUnion : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs1 rs2 : RSet a) → RSet a
-rSetUnion ⦃ o ⦄ ⦃ dio ⦄ r1@(RS ls1) r2@(RS ls2) = 
-   RS (normalise (merge1 ls1 ls2) ⦃ merge1Sorted r1 r2 ⦄ ⦃ merge1HasValidRanges r1 r2 ⦄) 
-      {unionHolds r1 r2}
+rSetUnion ⦃ o ⦄ ⦃ dio ⦄ r1@(RS ls1) r2@(RS ls2) = RS (normalise (merge1 ls1 ls2) ⦃ merge1Sorted r1 r2 ⦄ ⦃ merge1HasValidRanges r1 r2 ⦄) {unionHolds r1 r2}
 {-# COMPILE AGDA2HS rSetUnion #-}
 _-\/-_ : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs1 rs2 : RSet a) → RSet a
 _-\/-_ rs1 rs2 = rSetUnion rs1 rs2
 {-# COMPILE AGDA2HS _-\/-_ #-}
 
 -- helper method used for the intersection of 2 sets
-merge2 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ 
-   → List (Range a) → List (Range a) → List (Range a)
+merge2 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → List (Range a) → List (Range a) → List (Range a)
 merge2 [] [] = []
 merge2 ms1@(h1 ∷ t1) [] = []
 merge2 [] ms2@(h2 ∷ t2) = []
-merge2 ms1@(h1 ∷ t1) ms2@(h2 ∷ t2) = 
-   (rangeIntersection h1 h2) ∷ 
-   (if_then_else_ (rangeUpper h1 < rangeUpper h2) (merge2 t1 ms2) (merge2 ms1 t2))
+merge2 ms1@(h1 ∷ t1) ms2@(h2 ∷ t2) = (rangeIntersection h1 h2) ∷ (if_then_else_ (rangeUpper h1 < rangeUpper h2) (merge2 t1 ms2) (merge2 ms1 t2))
 {-# COMPILE AGDA2HS merge2 #-}
 -- intersection of two valid ranged sets is also valid range set
-intersection0 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs1 rs2 : RSet a)
-   → IsTrue (validRangeList (filter (λ x → (rangeIsEmpty x == false)) 
-                  (merge2 (rSetRanges rs1) (rSetRanges rs2))))
+intersection0 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs1 rs2 : RSet a) 
+   → IsTrue (validRangeList (filter (λ x → (rangeIsEmpty x == false)) (merge2 (rSetRanges rs1) (rSetRanges rs2))))
 -- | Set intersection for ranged sets.  Infix precedence is left 7.                 
-rSetIntersection : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ 
-   → (rs1 rs2 : RSet a) → RSet a
-rSetIntersection ⦃ o ⦄ ⦃ dio ⦄ rs1@(RS ls1) rs2@(RS ls2)  =
-    RS (filter (λ x → rangeIsEmpty ⦃ o ⦄ ⦃ dio ⦄ x == false) (merge2 ls1 ls2)) 
-      {intersection0 rs1 rs2}
+rSetIntersection : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs1 rs2 : RSet a) → RSet a
+rSetIntersection ⦃ o ⦄ ⦃ dio ⦄ rs1@(RS ls1) rs2@(RS ls2) = RS (filter (λ x → rangeIsEmpty ⦃ o ⦄ ⦃ dio ⦄ x == false) (merge2 ls1 ls2)) 
+   {intersection0 rs1 rs2}
 {-# COMPILE AGDA2HS rSetIntersection #-}
 _-/\-_ : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs1 rs2 : RSet a) → RSet a
 _-/\-_ rs1 rs2 = rSetIntersection rs1 rs2
@@ -320,7 +295,6 @@ instance
     isRangedSetMonoid : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → Monoid (RSet a)
     isRangedSetMonoid .mempty = rSetEmpty
 
-
 validFunction2 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (b : Boundary a) → (f : Boundary a → Boundary a) → Bool
 validFunction2 b f = (f b) > b
 
@@ -334,93 +308,68 @@ validFunction b g = (helper (g b) b)
 {-# COMPILE AGDA2HS validFunction #-}
 {-# COMPILE AGDA2HS helper #-}
 
-ranges3 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → 
-      Maybe (Boundary a) → (f : Boundary a → Boundary a) → (g : Boundary a → Maybe (Boundary a))
-      → List (Range a)
+ranges3 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → Maybe (Boundary a) → (f : Boundary a → Boundary a) 
+   → (g : Boundary a → Maybe (Boundary a)) → List (Range a)
 {-# TERMINATING #-}
-ranges2 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (b : Boundary a) 
-      → (f : Boundary a → Boundary a) → (g : Boundary a → Maybe (Boundary a))
-      → List (Range a)
+ranges2 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (b : Boundary a)  → (f : Boundary a → Boundary a) 
+   → (g : Boundary a → Maybe (Boundary a)) → List (Range a)
 ranges2 b upperFunc succFunc = (Rg b (upperFunc b)) ∷ (ranges3 (succFunc b) upperFunc succFunc)
-
-ranges3 (Just b1) upperFunc succFunc = if ((validFunction2 b1 upperFunc) && (validFunction b1 succFunc)) then
-                              (ranges2 b1 upperFunc succFunc) else []
+ranges3 (Just b1) upperFunc succFunc = if ((validFunction2 b1 upperFunc) && (validFunction b1 succFunc)) then (ranges2 b1 upperFunc succFunc) else []
 ranges3 Nothing _ _ = []
 {-# COMPILE AGDA2HS ranges2 #-}
 {-# COMPILE AGDA2HS ranges3 #-}
 
 -- proof that ranges2 produces valid Ranges (for all ranges, the upper bound >= the lower bound)
-ranges2HasValidRanges : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄
-                          → (b : Boundary a)
-                          → (f : Boundary a → Boundary a)
-                          → (g : Boundary a → Maybe (Boundary a))
-                          → IsTrue (validFunction2 b f) → IsTrue (validFunction b g)
-                          → IsTrue (validRanges (ranges2 b f g))                        
+ranges2HasValidRanges : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (b : Boundary a)
+   → (f : Boundary a → Boundary a) → (g : Boundary a → Maybe (Boundary a))
+   → IsTrue (validFunction2 b f) → IsTrue (validFunction b g) → IsTrue (validRanges (ranges2 b f g))                        
 -- unfold outputs a sorted list
-unfoldSorted : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (b : Boundary a) 
-            → (f : Boundary a → Boundary a) 
-            → (g : Boundary a → Maybe (Boundary a))
-            → IsTrue (sortedRangeList (ranges2 b f g))
+unfoldSorted : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (b : Boundary a) → (f : Boundary a → Boundary a) 
+   → (g : Boundary a → Maybe (Boundary a)) → IsTrue (sortedRangeList (ranges2 b f g))
 -- | Construct a range set.
 rSetUnfold : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (b : Boundary a) -- A first lower boundary
-            → (f : Boundary a → Boundary a) -- A function from a lower boundary to an upper boundary, which must return a result greater than the argument.
-            → (g : Boundary a → Maybe (Boundary a)) -- A function from a lower boundary to @Maybe@ the successor lower boundary, which must return a result greater than the argument.
-            → ⦃ IsTrue (validFunction2 b f) ⦄ 
-            → ⦃ IsTrue (validFunction b g) ⦄ → RSet a
+   → (f : Boundary a → Boundary a) -- A function from a lower boundary to an upper boundary, which must return a result greater than the argument.
+   → (g : Boundary a → Maybe (Boundary a)) -- A function from a lower boundary to @Maybe@ the successor lower boundary, which must return a result greater than the argument.
+    → ⦃ IsTrue (validFunction2 b f) ⦄ → ⦃ IsTrue (validFunction b g) ⦄ → RSet a
 rSetUnfold ⦃ o ⦄ ⦃ dio ⦄ bound upperFunc succFunc ⦃ fValid ⦄ ⦃ gValid ⦄ = 
    RS (normalise (ranges2 bound upperFunc succFunc) 
-               ⦃ unfoldSorted bound upperFunc succFunc ⦄ ⦃ ranges2HasValidRanges bound upperFunc succFunc fValid gValid ⦄)
-      { normalisedSortedList (ranges2 bound upperFunc succFunc) 
-               (unfoldSorted bound upperFunc succFunc) (ranges2HasValidRanges bound upperFunc succFunc fValid gValid) }
+      ⦃ unfoldSorted bound upperFunc succFunc ⦄ ⦃ ranges2HasValidRanges bound upperFunc succFunc fValid gValid ⦄)
+      {normalisedSortedList (ranges2 bound upperFunc succFunc) 
+         (unfoldSorted bound upperFunc succFunc) (ranges2HasValidRanges bound upperFunc succFunc fValid gValid)}
 {-# COMPILE AGDA2HS rSetUnfold #-}
 
 -- here are the proofs for invariants and preconditions
-
 postulate
-   composedRangeIsValid : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄
-            → (r1 r2 : Range a) 
-            → IsTrue (rangeLower r1 <= rangeLower r2 && rangeUpper r1 <= rangeUpper r2)
-            → IsTrue ((rangeLower r1) <= (rangeUpper r1))
-            → IsTrue ((rangeLower r2) <= (rangeUpper r2))
-            → ((rangeLower r1) <= (max (rangeUpper r1) (rangeUpper r2))) ≡ true
-   rangesLTEQ : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄
-                          → (b : Boundary a)
-                          → (f : Boundary a → Boundary a) → IsTrue (f b > b) → IsTrue (b <= f b)
-   -- we need instances for IsTrue validFunction/validFunction 
+   -- we need instances for IsTrue validFunction/validFunction2 
    helperForValidFunction1 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄
-                          → (b b1 : Boundary a)
-                          → (f : Boundary a → Boundary a)
-                          → (g : Boundary a → Maybe (Boundary a)) 
-                          → IsTrue (validFunction2 b f) → IsTrue (validFunction b g)
-                          → (cond : Bool) -- this condition is (validFunction2 b1 f) && (validFunction b1 g)
-                          → IsTrue cond
-                          → IsTrue (validFunction2 b1 f)
+     → (b b1 : Boundary a) → (f : Boundary a → Boundary a) → (g : Boundary a → Maybe (Boundary a)) 
+     → IsTrue (validFunction2 b f) → IsTrue (validFunction b g)
+     → (cond : Bool) -- this condition is (validFunction2 b1 f) && (validFunction b1 g)
+     → IsTrue cond → IsTrue (validFunction2 b1 f)
    helperForValidFunction2 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄
-                          → (b b1 : Boundary a)
-                          → (f : Boundary a → Boundary a)
-                          → (g : Boundary a → Maybe (Boundary a))
-                          → IsTrue (validFunction2 b f) → IsTrue (validFunction b g)
-                          → (cond : Bool) -- this condition is (validFunction2 b1 f) && (validFunction b1 g)
-                          → IsTrue cond
-                          → IsTrue (validFunction b1 g)
-   
-   sortedboundaries : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄
-                          → (r1 r2 : Range a)
-                          → IsTrue (okAdjacent r1 r2) 
-                          → IsTrue (rangeLower r1 <= rangeLower r2 && rangeUpper r1 <= rangeUpper r2)
-
-   -- used only when h <= h3
+      → (b b1 : Boundary a) → (f : Boundary a → Boundary a) → (g : Boundary a → Maybe (Boundary a))
+      → IsTrue (validFunction2 b f) → IsTrue (validFunction b g)
+      → (cond : Bool) -- this condition is (validFunction2 b1 f) && (validFunction b1 g)
+      → IsTrue cond → IsTrue (validFunction b1 g)
+   -- used only when h <= h3! (used for proving that merge1 produces a sorted list)
    okSorted : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (h h3 : Range a)
-         → sortedRangeList (h ∷ h3 ∷ []) ≡ true
-   -- used only when upper h <= lower(head ms)
+      → sortedRangeList (h ∷ h3 ∷ []) ≡ true
+   -- used only when upper h <= lower (head ms)!
    validList : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (h : Range a) → (ms : List (Range a))
-         → IsTrue (validRangeList ms)
-         → validRangeList (h ∷ ms) ≡ true
-   -- used only when h < (head ms)
+      → IsTrue (validRangeList ms) → validRangeList (h ∷ ms) ≡ true
+   -- used only when h < (head ms)!
    validSortedList : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (h : Range a) → (ms : List (Range a))
-         → IsTrue (sortedRangeList ms)
-         → sortedRangeList (h ∷ ms) ≡ true
+      → IsTrue (sortedRangeList ms) → sortedRangeList (h ∷ ms) ≡ true
 
+rangesLTEQ : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (b : Boundary a)
+   → (f : Boundary a → Boundary a) → IsTrue (f b > b) → IsTrue (b <= f b)
+rangesLTEQ b f prf = eq6 (f b) b prf
+
+composedRangeIsValid : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (r1 r2 : Range a) 
+   → IsTrue (rangeLower r1 <= rangeLower r2)
+   → IsTrue ((rangeLower r1) <= (rangeUpper r1)) → IsTrue ((rangeLower r2) <= (rangeUpper r2))
+   → ((rangeLower r1) <= (max (rangeUpper r1) (rangeUpper r2))) ≡ true
+composedRangeIsValid r1 r2 prf1 prf2 prf3 = eq5 (rangeLower r1) (rangeUpper r1) (rangeLower r2) (rangeUpper r2) prf1 prf2 prf3         
 -- similar to validRangeList, but for boundaries
 validBoundaryList : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → List (Boundary a) → Bool
 validBoundaryList [] = true
@@ -428,13 +377,36 @@ validBoundaryList (x ∷ []) = true
 validBoundaryList (x ∷ rs@(r1 ∷ rss)) = (x <= r1) && (validBoundaryList rs)
 
 tailandheadSorted : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs : List (Range a)) 
-      → (r1 r2 : Range a) → IsTrue (sortedRangeList (r1 ∷ r2 ∷ rs)) 
-      → (IsTrue (rangeLower r1 <= rangeLower r2 && rangeUpper r1 <= rangeUpper r2))   
-tailandheadSorted rs r1 r2 prf = isTrue&&₁ {rangeLower r1 <= rangeLower r2 && rangeUpper r1 <= rangeUpper r2} prf
-      
+   → (r1 r2 : Range a) → IsTrue (sortedRangeList (r1 ∷ r2 ∷ rs)) 
+   → (IsTrue (rangeLower r1 <= rangeLower r2))   
+tailandheadSorted rs r1 r2 prf = isTrue&&₁ {rangeLower r1 <= rangeLower r2} prf
+
+sortedListComposed0 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄
+   → (r1 r2 : Range a) → (ranges : List (Range a)) → IsTrue (sortedRangeList (r1 ∷ r2 ∷ ranges))
+   → sortedRangeList ((Rg (rangeLower r1) (max (rangeUpper r1) (rangeUpper r2))) ∷ ranges) ≡ true
+sortedListComposed0 r1 r2 ranges@([]) prf = 
+   begin 
+      sortedRangeList ((Rg (rangeLower r1) (max (rangeUpper r1) (rangeUpper r2))) ∷ [])
+  =⟨⟩
+      true
+   end   
+sortedListComposed0 r1 r2 ranges@(r ∷ rs) prf = 
+   begin 
+      sortedRangeList ((Rg (rangeLower r1) (max (rangeUpper r1) (rangeUpper r2))) ∷ ranges)
+  =⟨⟩  
+      ((rangeLower r1) <= (rangeLower r) && sortedRangeList ranges) 
+  =⟨ cong ((rangeLower r1) <= (rangeLower r) &&_) (propIsTrue (sortedRangeList ranges) (headandtailSorted (r2 ∷ ranges) (headandtailSorted (r1 ∷ r2 ∷ ranges) prf))) ⟩
+      ((rangeLower r1) <= (rangeLower r) && true) 
+  =⟨ prop_and_true ((rangeLower r1) <= (rangeLower r)) ⟩
+      ((rangeLower r1) <= (rangeLower r))
+  =⟨ propIsTrue ((rangeLower r1) <= (rangeLower r)) (eq8 (rangeLower r1) (rangeLower r2) (rangeLower r) (tailandheadSorted ranges r1 r2 prf) (tailandheadSorted rs r2 r (headandtailSorted (r1 ∷ r2 ∷ ranges) prf))) ⟩
+      true 
+   end   
+sortedListComposed r1 r2 ranges prf = subst IsTrue (sym (sortedListComposed0 r1 r2 ranges prf)) IsTrue.itsTrue
+
 tailandheadValidRanges : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs : List (Range a)) 
-      → ⦃ ne : NonEmpty rs ⦄ → (IsTrue (validRanges rs)) 
-      → (IsTrue ((rangeLower (head rs ⦃ ne ⦄)) <= (rangeUpper (head rs ⦃ ne ⦄))))
+   → ⦃ ne : NonEmpty rs ⦄ → (IsTrue (validRanges rs)) 
+   → (IsTrue ((rangeLower (head rs ⦃ ne ⦄)) <= (rangeUpper (head rs ⦃ ne ⦄))))
 tailandheadValidRanges rs@(r ∷ rss) prf = isTrue&&₁ {rangeLower r <= rangeUpper r} prf
       
 -- empty range is valid
@@ -482,60 +454,51 @@ singletonRangeValid x = subst IsTrue (sym (singletonRangeValid0 x)) IsTrue.itsTr
 
 -- helper proofs
 okAdjValid : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs : List (Range a)) → (r : Range a)
-      → ⦃ ne : NonEmpty rs ⦄ → (IsTrue (validRangeList (r ∷ rs))) → IsTrue (okAdjacent r (head rs ⦃ ne ⦄))            
+   → ⦃ ne : NonEmpty rs ⦄ → (IsTrue (validRangeList (r ∷ rs))) → IsTrue (okAdjacent r (head rs ⦃ ne ⦄))            
 okAdjValid rs@(r2 ∷ rss) r prf = isTrue&&₁ {okAdjacent r r2} prf
 
 okAdjIsTrue :  ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (r : Range a) → (r2 : Range a)
-               → okAdjacent r r2 ≡ ((rangeLower r <= rangeUpper r) && (rangeUpper r <= rangeLower r2) && (rangeLower r2 <= rangeUpper r2))                        
+   → okAdjacent r r2 ≡ ((rangeLower r <= rangeUpper r) && (rangeUpper r <= rangeLower r2) && (rangeLower r2 <= rangeUpper r2))                        
 okAdjIsTrue ⦃ o ⦄ ⦃ dio ⦄ r@(Rg l1 u1) r2@(Rg l2 u2) = refl 
 
-headandtail2 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs : List (Range a)) 
-      → ⦃ ne : NonEmpty rs ⦄ → (IsTrue (validRangeList rs)) 
-      → (IsTrue (validRangeList (tail rs ⦃ ne ⦄)))   
+headandtail2 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs : List (Range a)) → ⦃ ne : NonEmpty rs ⦄ → (IsTrue (validRangeList rs)) 
+   → (IsTrue (validRangeList (tail rs ⦃ ne ⦄)))   
 headandtail2 rs@(r ∷ []) prf = IsTrue.itsTrue
 headandtail2 rs@(r ∷ rss@(r2 ∷ rsss)) prf = isTrue&&₂ {okAdjacent r r2} prf
 
-tailandhead : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs : RSet a) 
-      → ⦃ ne : NonEmpty (rSetRanges rs) ⦄ → (IsTrue (validRangeList (rSetRanges rs))) 
-      → (IsTrue (validRangeList ((head (rSetRanges rs) ⦃ ne ⦄) ∷ [])))
+tailandhead : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs : RSet a) → ⦃ ne : NonEmpty (rSetRanges rs) ⦄ → (IsTrue (validRangeList (rSetRanges rs))) 
+   → (IsTrue (validRangeList ((head (rSetRanges rs) ⦃ ne ⦄) ∷ [])))
 tailandhead rs@(RS (r ∷ [])) prf = prf
 tailandhead rs@(RS (r ∷ rss@(r2 ∷ rsss))) prf = isTrue&&₁ {rangeLower r <= rangeUpper r} 
       (subst IsTrue (okAdjIsTrue r r2) (isTrue&&₁ {okAdjacent r r2} prf))
 
-tailandhead2 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs : List (Range a)) 
-      → ⦃ ne : NonEmpty rs ⦄ → (IsTrue (validRangeList rs)) 
-      → (IsTrue (validRangeList ((head rs ⦃ ne ⦄) ∷ [])))     
+tailandhead2 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs : List (Range a)) → ⦃ ne : NonEmpty rs ⦄ → (IsTrue (validRangeList rs)) 
+   → (IsTrue (validRangeList ((head rs ⦃ ne ⦄) ∷ [])))     
 tailandhead2 rs@(r ∷ []) prf = prf
 tailandhead2 rs@(r ∷ rss@(r2 ∷ rsss)) prf = isTrue&&₁ {rangeLower r <= rangeUpper r} 
       (subst IsTrue (okAdjIsTrue r r2) (isTrue&&₁ {okAdjacent r r2} prf))
 
-
-validIsSorted0 :  ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (ms : List (Range a))
-                     → IsTrue (validRangeList ms) → (sortedRangeList ms) ≡ true
+validIsSorted0 :  ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (ms : List (Range a)) → IsTrue (validRangeList ms) → (sortedRangeList ms) ≡ true
 validIsSorted0 ⦃ o ⦄ ⦃ dio ⦄ [] prf = refl 
 validIsSorted0 ⦃ o ⦄ ⦃ dio ⦄ ms@(r1 ∷ []) prf = refl
 validIsSorted0 ⦃ o ⦄ ⦃ dio ⦄ ms@(r1 ∷ t@(r2 ∷ rs)) prf = 
    begin 
      (sortedRangeList ms)
   =⟨⟩
-     ((rangeLower r1 <= rangeLower r2 && rangeUpper r1 <= rangeUpper r2) && (sortedRangeList t))
-  =⟨ cong ((rangeLower r1 <= rangeLower r2 && rangeUpper r1 <= rangeUpper r2) &&_) (validIsSorted0 t (headandtail2 ms prf)) ⟩
-     ((rangeLower r1 <= rangeLower r2 && rangeUpper r1 <= rangeUpper r2) && true)  
-  =⟨ prop_and_true (rangeLower r1 <= rangeLower r2 && rangeUpper r1 <= rangeUpper r2) ⟩
-     (rangeLower r1 <= rangeLower r2 && rangeUpper r1 <= rangeUpper r2)
-  =⟨ propIsTrue ((rangeLower r1 <= rangeLower r2 && rangeUpper r1 <= rangeUpper r2)) (sortedboundaries r1 r2 (okAdjValid t r1 prf)) ⟩      
+     ((rangeLower r1 <= rangeLower r2) && (sortedRangeList t))
+  =⟨ cong ((rangeLower r1 <= rangeLower r2) &&_) (validIsSorted0 t (headandtail2 ms prf)) ⟩
+     ((rangeLower r1 <= rangeLower r2) && true)  
+  =⟨ prop_and_true (rangeLower r1 <= rangeLower r2) ⟩
+     (rangeLower r1 <= rangeLower r2)
+  =⟨ propIsTrue (rangeLower r1 <= rangeLower r2) (eq7 (rangeLower r1) (rangeUpper r1) (rangeLower r2) (rangeUpper r2) (subst IsTrue (okAdjIsTrue r1 r2) (okAdjValid t r1 prf))) ⟩      
    true 
   end 
-validIsSorted :  ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (ms : List (Range a))
-                     → IsTrue (validRangeList ms) → IsTrue (sortedRangeList ms)
+validIsSorted :  ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (ms : List (Range a)) → IsTrue (validRangeList ms) → IsTrue (sortedRangeList ms)
 validIsSorted ⦃ o ⦄ ⦃ dio ⦄ ms prf = subst IsTrue (sym (validIsSorted0 ms prf)) IsTrue.itsTrue
 
-
-validRangesComposed0 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄
-            → (r1 r2 : Range a) → (ranges : List (Range a))
-            → IsTrue (sortedRangeList (r1 ∷ r2 ∷ ranges))
-            → IsTrue (validRanges (r1 ∷ r2 ∷ ranges))
-            → validRanges ((Rg (rangeLower r1) (max (rangeUpper r1) (rangeUpper r2))) ∷ ranges) ≡ true 
+validRangesComposed0 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (r1 r2 : Range a) → (ranges : List (Range a))
+   → IsTrue (sortedRangeList (r1 ∷ r2 ∷ ranges)) → IsTrue (validRanges (r1 ∷ r2 ∷ ranges))
+   → validRanges ((Rg (rangeLower r1) (max (rangeUpper r1) (rangeUpper r2))) ∷ ranges) ≡ true 
 validRangesComposed0 ⦃ o ⦄ ⦃ dio ⦄ r1 r2 ranges prf1 prf2 = 
    begin 
       validRanges ((Rg (rangeLower r1) (max (rangeUpper r1) (rangeUpper r2))) ∷ ranges)
@@ -551,7 +514,7 @@ validRangesComposed0 ⦃ o ⦄ ⦃ dio ⦄ r1 r2 ranges prf1 prf2 =
 validRangesComposed ⦃ o ⦄ ⦃ dio ⦄ r1 r2 ranges prf1 prf2 = subst IsTrue (sym (validRangesComposed0 r1 r2 ranges prf1 prf2)) IsTrue.itsTrue 
 
 headandtailSorted rs@(r ∷ []) prf = IsTrue.itsTrue
-headandtailSorted rs@(r1 ∷ rss@(r2 ∷ rsss)) prf = isTrue&&₂ {rangeLower r1 <= rangeLower r2 && rangeUpper r1 <= rangeUpper r2} prf
+headandtailSorted rs@(r1 ∷ rss@(r2 ∷ rsss)) prf = isTrue&&₂ {rangeLower r1 <= rangeLower r2} prf
 
 headandtail rs@(RS (r ∷ [])) prf = IsTrue.itsTrue
 headandtail rs@(RS (r ∷ rss@(r2 ∷ rsss))) prf = isTrue&&₂ {okAdjacent r r2} prf
@@ -560,20 +523,12 @@ headandtailValidRanges rs@(r ∷ []) prf = IsTrue.itsTrue
 headandtailValidRanges rs@(r ∷ rss@(r2 ∷ rsss)) prf = isTrue&&₂ {rangeLower r <= rangeUpper r} prf
 
 -- helper proof for proving that ranges2 produces valid Ranges (for all ranges, the upper bound >= the lower bound)
-ranges2HasValidRanges0 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄
-                          → (b : Boundary a)
-                          → (f : Boundary a → Boundary a)
-                          → (g : Boundary a → Maybe (Boundary a))
-                          → IsTrue (validFunction2 b f) → IsTrue (validFunction b g)
-                          → (validRanges (ranges2 b f g)) ≡ true  
+ranges2HasValidRanges0 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (b : Boundary a) → (f : Boundary a → Boundary a)
+   → (g : Boundary a → Maybe (Boundary a)) → IsTrue (validFunction2 b f) → IsTrue (validFunction b g) → (validRanges (ranges2 b f g)) ≡ true  
 -- helper proof for proving that ranges2 produces valid Ranges (for all ranges, the upper bound >= the lower bound)
-ranges2HasValidRanges000 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄
-                          → (b b1 : Boundary a)
-                          → (f : Boundary a → Boundary a)
-                          → (g : Boundary a → Maybe (Boundary a))
-                          → (cond : Bool) 
-                          → IsTrue (validFunction2 b f) → IsTrue (validFunction b g)
-                          → (validRanges ((Rg b (f b)) ∷ (if cond then (ranges2 b1 f g) else []))) ≡ true 
+ranges2HasValidRanges000 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (b b1 : Boundary a) → (f : Boundary a → Boundary a)
+   → (g : Boundary a → Maybe (Boundary a)) → (cond : Bool) → IsTrue (validFunction2 b f) → IsTrue (validFunction b g)
+   → (validRanges ((Rg b (f b)) ∷ (if cond then (ranges2 b1 f g) else []))) ≡ true 
 ranges2HasValidRanges000 ⦃ o ⦄ ⦃ dio ⦄ b b1 f g false prf1 prf2 = 
    begin 
       (validRanges ⦃ o ⦄ ⦃ dio ⦄ ((Rg b (f b)) ∷ []))
@@ -600,13 +555,9 @@ ranges2HasValidRanges000 ⦃ o ⦄ ⦃ dio ⦄ b b1 f g true prf1 prf2 =
      true      
    end 
 -- helper proof for proving that ranges2 produces valid Ranges (for all ranges, the upper bound >= the lower bound)
-ranges2HasValidRanges00 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄
-                          → (b : Boundary a)
-                          → (f : Boundary a → Boundary a)
-                          → (g : Boundary a → Maybe (Boundary a))
-                          → (mb : Maybe (Boundary a)) 
-                          → IsTrue (validFunction2 b f) → IsTrue (validFunction b g)
-                          → (validRanges ((Rg b (f b)) ∷ (ranges3 mb f g))) ≡ true  
+ranges2HasValidRanges00 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (b : Boundary a)
+   → (f : Boundary a → Boundary a) → (g : Boundary a → Maybe (Boundary a))
+   → (mb : Maybe (Boundary a)) → IsTrue (validFunction2 b f) → IsTrue (validFunction b g) → (validRanges ((Rg b (f b)) ∷ (ranges3 mb f g))) ≡ true  
 ranges2HasValidRanges00 ⦃ o ⦄ ⦃ dio ⦄ b f g Nothing prf1 prf2 = 
    begin 
       (validRanges ⦃ o ⦄ ⦃ dio ⦄ ((Rg b (f b)) ∷ (ranges3 Nothing f g)))
@@ -641,10 +592,8 @@ ranges2HasValidRanges0 ⦃ o ⦄ ⦃ dio ⦄ b f g prf1 prf2 =
 ranges2HasValidRanges ⦃ o ⦄ ⦃ dio ⦄ b f g prf1 prf2 = subst IsTrue (sym (ranges2HasValidRanges0 b f g prf1 prf2)) IsTrue.itsTrue
 
 -- if a range list is valid, then for all ranges, the upper boundary >= the lower boundary
-validListMeansValidRanges : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄
-                          → (rs1 : RSet a)
-                          → IsTrue (validRangeList (rSetRanges rs1))
-                          → (validRanges (rSetRanges rs1)) ≡ true 
+validListMeansValidRanges : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs1 : RSet a) → IsTrue (validRangeList (rSetRanges rs1))
+   → (validRanges (rSetRanges rs1)) ≡ true 
 validListMeansValidRanges ⦃ o ⦄ ⦃ dio ⦄ rs1@(RS []) prf = 
    begin 
       (validRanges ⦃ o ⦄ ⦃ dio ⦄ [])
@@ -677,18 +626,13 @@ validListMeansValidRanges ⦃ o ⦄ ⦃ dio ⦄ rs1@(RS ranges@(r1 ∷ r2 ∷ r3
  end 
 
 -- helper proof for proving that merge1 produces valid Ranges (for all ranges, the upper bound >= the lower bound)
-merge1HasValidRanges0 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄
-                          → (rs1 rs2 : RSet a)
-                          → IsTrue (validRangeList (rSetRanges rs1)) → IsTrue (validRangeList (rSetRanges rs2))
-                          → (validRanges (merge1 (rSetRanges rs1) (rSetRanges rs2))) ≡ true 
+merge1HasValidRanges0 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs1 rs2 : RSet a)
+   → IsTrue (validRangeList (rSetRanges rs1)) → IsTrue (validRangeList (rSetRanges rs2))
+   → (validRanges (merge1 (rSetRanges rs1) (rSetRanges rs2))) ≡ true 
 -- helper proof for proving that merge1 produces valid Ranges (for all ranges, the upper bound >= the lower bound)
-merge1HasValidRanges00 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄
-                          → (rs1 rs2 : RSet a) → (h1 h2 : Range a)
-                          → IsTrue (validRangeList (h1 ∷ (rSetRanges rs1))) → IsTrue (validRangeList (h2 ∷ (rSetRanges rs2)))
-                          → (b : Bool)
-                          → validRanges (if_then_else_ b 
-                          (h1 ∷ (merge1 (rSetRanges rs1) (h2 ∷ (rSetRanges rs2)))) 
-                          (h2 ∷ (merge1 (h1 ∷ (rSetRanges rs1)) (rSetRanges rs2)))) ≡ true 
+merge1HasValidRanges00 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs1 rs2 : RSet a) → (h1 h2 : Range a)
+   → IsTrue (validRangeList (h1 ∷ (rSetRanges rs1))) → IsTrue (validRangeList (h2 ∷ (rSetRanges rs2)))
+   → (b : Bool) → validRanges (if_then_else_ b (h1 ∷ (merge1 (rSetRanges rs1) (h2 ∷ (rSetRanges rs2)))) (h2 ∷ (merge1 (h1 ∷ (rSetRanges rs1)) (rSetRanges rs2)))) ≡ true 
 merge1HasValidRanges00 ⦃ o ⦄ ⦃ dio ⦄ rs1@(RS t1) rs2@(RS t2) h1 h2 prf1 prf2 true = 
    begin 
       validRanges (h1 ∷ (merge1 (rSetRanges rs1) (h2 ∷ (rSetRanges rs2)))) 
@@ -751,17 +695,12 @@ merge1HasValidRanges0 ⦃ o ⦄ ⦃ dio ⦄ rs1@(RS (h1 ∷ t1)) rs2@(RS (h2 ∷
 merge1HasValidRanges ⦃ o ⦄ ⦃ dio ⦄ rs1@(RS ranges1 {prf1}) rs2@(RS ranges2 {prf2}) = subst IsTrue (sym (merge1HasValidRanges0 rs1 rs2 prf1 prf2)) IsTrue.itsTrue
 
 -- helper proof for validRangeList (normalise list)
-normalisedSortedList0 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ 
-         → (ms : List (Range a))
-         → (prf : IsTrue (sortedRangeList ms)) 
-         → (prf2 : IsTrue (validRanges ms))
-         → validRangeList (normalise ms ⦃ prf ⦄ ⦃ prf2 ⦄) ≡ true 
+normalisedSortedList0 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (ms : List (Range a)) → (prf : IsTrue (sortedRangeList ms)) 
+   → (prf2 : IsTrue (validRanges ms)) → validRangeList (normalise ms ⦃ prf ⦄ ⦃ prf2 ⦄) ≡ true 
 -- helper proof for validRangeList (normalise list)
-normalisedSortedList00 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ 
-         → (rs : List (Range a))
-         → (r1 r2 : Range a) → (prf : IsTrue (sortedRangeList (r1 ∷ r2 ∷ rs))) → (prf2 : IsTrue (validRanges (r1 ∷ r2 ∷ rs)))
-         → (b : Bool)
-         → validRangeList (if_then_else_ b
+normalisedSortedList00 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs : List (Range a))
+   → (r1 r2 : Range a) → (prf : IsTrue (sortedRangeList (r1 ∷ r2 ∷ rs))) → (prf2 : IsTrue (validRanges (r1 ∷ r2 ∷ rs)))
+   → (b : Bool) → validRangeList (if_then_else_ b
       (normalise ((Rg (rangeLower r1) (max (rangeUpper r1) (rangeUpper r2))) ∷ rs) ⦃ sortedListComposed r1 r2 rs prf ⦄ ⦃ validRangesComposed r1 r2 rs prf prf2 ⦄) 
          (r1 ∷ (normalise (r2 ∷ rs) ⦃ headandtailSorted (r1 ∷ r2 ∷ rs) prf ⦄ ⦃ headandtailValidRanges (r1 ∷ r2 ∷ rs) prf2 ⦄))) ≡ true 
 normalisedSortedList00 ⦃ o ⦄ ⦃ dio ⦄ rs r1 r2 prf prf2 true = 
@@ -824,11 +763,9 @@ normalisedSortedList0 ⦃ o ⦄ ⦃ dio ⦄ ms@(r1 ∷ r2 ∷ rs) prf prf2 =
 normalisedSortedList ⦃ o ⦄ ⦃ dio ⦄ ms prf prf2 = subst IsTrue (sym (normalisedSortedList0 ms prf prf2)) IsTrue.itsTrue
 
 -- helper proof for proving that unfold outputs a sorted list
-unfoldIsSorted00 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (b : Boundary a) 
-            → (f : Boundary a → Boundary a) 
-            → (g : Boundary a → Maybe (Boundary a))
-            → (b1 : Boundary a) → (cond : Bool)
-            → sortedRangeList ((Rg b (f b)) ∷ (if_then_else_ cond (ranges2 b1 f g) [])) ≡ true
+unfoldIsSorted00 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (b : Boundary a) → (f : Boundary a → Boundary a) 
+   → (g : Boundary a → Maybe (Boundary a)) → (b1 : Boundary a) → (cond : Bool)
+   → sortedRangeList ((Rg b (f b)) ∷ (if_then_else_ cond (ranges2 b1 f g) [])) ≡ true
 unfoldIsSorted00 ⦃ o ⦄ ⦃ dio ⦄ b f g b1 false = 
      begin 
       sortedRangeList ((Rg b (f b)) ∷ (if_then_else_ false (ranges2 b1 f g) []))
@@ -846,10 +783,8 @@ unfoldIsSorted00 ⦃ o ⦄ ⦃ dio ⦄ b f g b1 true =
    true 
    end
 -- helper proof for proving that unfold outputs a sorted list
-unfoldIsSorted0 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (b : Boundary a) 
-            → (f : Boundary a → Boundary a) 
-            → (g : Boundary a → Maybe (Boundary a))
-            → (mb : Maybe (Boundary a)) → sortedRangeList ((Rg b (f b)) ∷ (ranges3 mb f g)) ≡ true   
+unfoldIsSorted0 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (b : Boundary a) → (f : Boundary a → Boundary a) 
+   → (g : Boundary a → Maybe (Boundary a)) → (mb : Maybe (Boundary a)) → sortedRangeList ((Rg b (f b)) ∷ (ranges3 mb f g)) ≡ true   
 unfoldIsSorted0 ⦃ o ⦄ ⦃ dio ⦄ b f g Nothing = 
      begin 
       sortedRangeList ((Rg b (f b)) ∷ (ranges3 Nothing f g))
@@ -867,10 +802,8 @@ unfoldIsSorted0 ⦃ o ⦄ ⦃ dio ⦄ b f g mb@(Just b1) =
    true 
    end  
 -- unfold outputs a sorted list
-unfoldIsSorted : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (b : Boundary a) 
-            → (f : Boundary a → Boundary a) 
-            → (g : Boundary a → Maybe (Boundary a))
-            → sortedRangeList (ranges2 b f g) ≡ true
+unfoldIsSorted : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (b : Boundary a) → (f : Boundary a → Boundary a) 
+   → (g : Boundary a → Maybe (Boundary a)) → sortedRangeList (ranges2 b f g) ≡ true
 unfoldIsSorted ⦃ o ⦄ ⦃ dio ⦄ b f g = 
    begin 
       sortedRangeList (ranges2 b f g)
@@ -883,9 +816,8 @@ unfoldSorted ⦃ o ⦄ ⦃ dio ⦄ b f g = subst IsTrue (sym (unfoldIsSorted b f
 
 -- used for proving that union is valid (merge1 returns a sorted range list)
 merge1IsSorted0 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (h1 h2 : Range a) → (t1 t2 : RSet a) → (b : Bool)
-         → IsTrue (validRangeList (h1 ∷ (rSetRanges t1))) → IsTrue (validRangeList (h2 ∷ (rSetRanges t2)))
-         → sortedRangeList (if_then_else_ b (h1 ∷ (merge1 (rSetRanges t1) (h2 ∷ (rSetRanges t2)))) 
-            (h2 ∷ (merge1 (h1 ∷ (rSetRanges t1)) (rSetRanges t2)))) ≡ true 
+   → IsTrue (validRangeList (h1 ∷ (rSetRanges t1))) → IsTrue (validRangeList (h2 ∷ (rSetRanges t2)))
+   → sortedRangeList (if_then_else_ b (h1 ∷ (merge1 (rSetRanges t1) (h2 ∷ (rSetRanges t2)))) (h2 ∷ (merge1 (h1 ∷ (rSetRanges t1)) (rSetRanges t2)))) ≡ true 
 merge1IsSorted0 ⦃ o ⦄ ⦃ dio ⦄ h1 h2 rs1@(RS []) rs2@(RS []) true prf1 prf2 = 
    begin 
       sortedRangeList (h1 ∷ (merge1 [] (h2 ∷ [])))
@@ -931,8 +863,8 @@ merge1IsSorted0 ⦃ o ⦄ ⦃ dio ⦄ h1 h2 rs1@(RS t1) rs2@(RS t2@(h4 ∷ tt2))
       true
    end
 merge1IsSorted1 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs1 : RSet a) → (rs2 : RSet a)
-         → IsTrue (validRangeList (rSetRanges rs1)) → IsTrue (validRangeList (rSetRanges rs2))
-         → sortedRangeList (merge1 (rSetRanges rs1) (rSetRanges rs2)) ≡ true 
+   → IsTrue (validRangeList (rSetRanges rs1)) → IsTrue (validRangeList (rSetRanges rs2))
+   → sortedRangeList (merge1 (rSetRanges rs1) (rSetRanges rs2)) ≡ true 
 merge1IsSorted1 ⦃ o ⦄ ⦃ dio ⦄ rs1@(RS []) rs2@(RS []) prf1 prf2 = refl
 merge1IsSorted1 ⦃ o ⦄ ⦃ dio ⦄ rs1@(RS ms1@(h1 ∷ t1)) rs2@(RS []) prf1 prf2 = propIsTrue (sortedRangeList (merge1 (rSetRanges rs1) (rSetRanges rs2))) (validIsSorted (merge1 (rSetRanges rs1) (rSetRanges rs2)) prf1)
 merge1IsSorted1 ⦃ o ⦄ ⦃ dio ⦄ rs1@(RS []) rs2@(RS ms1@(h1 ∷ t1)) prf1 prf2 = propIsTrue (sortedRangeList (merge1 (rSetRanges rs1) (rSetRanges rs2))) (validIsSorted (merge1 (rSetRanges rs1) (rSetRanges rs2)) prf2)
@@ -948,12 +880,11 @@ merge1Sorted ⦃ o ⦄ ⦃ dio ⦄ rs1@(RS ranges1 {prf1}) rs2@(RS ranges2 {prf2
 
 -- proof that invariant holds for intersection
 intersectionHolds : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs1 : RSet a) → (rs2 : RSet a)
-                  → validRangeList (filter (λ x → (rangeIsEmpty x == false)) (merge2 (rSetRanges rs1) (rSetRanges rs2))) ≡ true   
+   → validRangeList (filter (λ x → (rangeIsEmpty x == false)) (merge2 (rSetRanges rs1) (rSetRanges rs2))) ≡ true   
 intersection3 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs1 : RSet a) → (rs2 : RSet a) 
-                  → ⦃ ne1 : NonEmpty (rSetRanges rs1) ⦄ → ⦃ ne2 : NonEmpty (rSetRanges rs2) ⦄
-                  → IsTrue (validRangeList (rSetRanges rs1)) → IsTrue (validRangeList (rSetRanges rs2))
-                  → (b : Bool)
-                  → validRangeList ((filter (λ x → (rangeIsEmpty x == false)) 
+   → ⦃ ne1 : NonEmpty (rSetRanges rs1) ⦄ → ⦃ ne2 : NonEmpty (rSetRanges rs2) ⦄
+   → IsTrue (validRangeList (rSetRanges rs1)) → IsTrue (validRangeList (rSetRanges rs2)) → (b : Bool)
+   → validRangeList ((filter (λ x → (rangeIsEmpty x == false)) 
                         (if_then_else_ b
                            (merge2 (tail (rSetRanges rs1) ⦃ ne1 ⦄) (rSetRanges rs2)) 
                            (merge2 (rSetRanges rs1) (tail (rSetRanges rs2) ⦃ ne2 ⦄))))) ≡ true
@@ -980,18 +911,16 @@ intersection3 ⦃ o ⦄ ⦃ dio ⦄ rs1@(RS ranges1@(r1 ∷ rss1)) rs2@(RS range
 
 -- the following 2 proofs are used for proving that intersection outputs a valid rangelist (used for proving the invariant)
 intersection2 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs1 : RSet a) → (rs2 : RSet a) 
-                  → ⦃ ne1 : NonEmpty (rSetRanges rs1) ⦄ → ⦃ ne2 : NonEmpty (rSetRanges rs2) ⦄
-                  → IsTrue (validRangeList (rSetRanges rs1)) → IsTrue (validRangeList (rSetRanges rs2))
-                  → (b : Bool)
-                  →     validRangeList (
+   → ⦃ ne1 : NonEmpty (rSetRanges rs1) ⦄ → ⦃ ne2 : NonEmpty (rSetRanges rs2) ⦄
+   → IsTrue (validRangeList (rSetRanges rs1)) → IsTrue (validRangeList (rSetRanges rs2))
+   → (b : Bool)
+   → validRangeList (
        if_then_else_ b
-      
       ((rangeIntersection (head (rSetRanges rs1) ⦃ ne1 ⦄) (head (rSetRanges rs2) ⦃ ne2 ⦄)) 
       ∷ (filter (λ x → (rangeIsEmpty x == false))
        (if_then_else_ (rangeUpper (head (rSetRanges rs1) ⦃ ne1 ⦄) < rangeUpper (head (rSetRanges rs2) ⦃ ne2 ⦄)) 
         (merge2 (tail (rSetRanges rs1) ⦃ ne1 ⦄) (rSetRanges rs2))
         (merge2 (rSetRanges rs1) (tail (rSetRanges rs2) ⦃ ne2 ⦄))))) 
-       
        (filter (λ x → (rangeIsEmpty x == false)) 
          (if_then_else_ (rangeUpper (head (rSetRanges rs1) ⦃ ne1 ⦄) < rangeUpper (head (rSetRanges rs2) ⦃ ne2 ⦄))
           (merge2 (tail (rSetRanges rs1) ⦃ ne1 ⦄) (rSetRanges rs2)) 

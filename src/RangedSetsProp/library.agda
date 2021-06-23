@@ -28,6 +28,10 @@ cong f refl = refl
 begin_ : {A : Set} → {x y : A} → x ≡ y → x ≡ y
 begin p = p
 
+{-# TERMINATING #-}
+f3 : {A : Set} -> List A -> List A
+f3 xs = xs ++ (f3 xs)
+
 _end : {A : Set} → (x : A) → x ≡ x
 x end = refl
 
@@ -90,6 +94,7 @@ prop_or_and_eqiv_false false false _ _ = refl
 postulate 
    prop_logic4 : (a b : Bool) → IsFalse (a && b) -> IsTrue a → IsTrue (not b)
    prop_logic5 : (a b : Bool) → IsFalse (a && b) -> IsFalse a → IsFalse (not b)
+   prop_logic6 : (a b : Bool) → {c : Bool} → IsTrue (a || b) -> IsFalse ((not a) && (not b) && c)
    isTrueAndIsFalse1 : {b : Bool} -> IsTrue b -> IsFalse (not b) 
    isTrueAndIsFalse2 : {b : Bool} -> IsTrue (not b) -> IsFalse b
    isTrueAndIsFalse3 : {b : Bool} -> IsFalse (not b) -> IsTrue b
@@ -103,7 +108,10 @@ postulate
    eq2 : ⦃ o : Ord a ⦄ → (x y : a) → not (_<=_ ⦃ o ⦄ x y) ≡ (_<_ ⦃ o ⦄ y x)
    eq3 : ⦃ o : Ord a ⦄ → (x y i j : a) → ⦃ IsTrue ((_<_ ⦃ o ⦄ i x) && (_<_ ⦃ o ⦄ j y)) ⦄ → ((min ⦃ o ⦄ x y) <= (max ⦃ o ⦄ i j)) ≡ ((_<=_ ⦃ o ⦄ x j) || (_<=_ ⦃ o ⦄ y i))
    eq4 : ⦃ o : Ord a ⦄ → ∀ {x y : a} → (x ≡ y) → ((compare x y) == EQ) ≡ true
-    
+   eq5 : ⦃ o : Ord a ⦄ → (a b c d : a) → IsTrue (a <= c) → IsTrue (a <= b) → IsTrue (c <= d) → (a <= (max b d)) ≡ true
+   eq6 : ⦃ o : Ord a ⦄ → (x y : a) → IsTrue (x > y) → IsTrue (y <= x) 
+   eq7 : ⦃ o : Ord a ⦄ → (a b c d : a) → IsTrue (a <= b && b <= c && c <= d) → IsTrue (a <= c) 
+   eq8 : ⦃ o : Ord a ⦄ → (a b c : a) → IsTrue (a <= b) → IsTrue (b <= c) → IsTrue (a <= c) 
    boundaries0 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (x : a) → (b c : Boundary a) → ((x />/ b) && (x />/ c)) ≡ (x />/ (max b c))
    boundaries1 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (x : a) → (b c : Boundary a) → ((x />/ b) || (x />/ c)) ≡ (x />/ (min b c))
 
