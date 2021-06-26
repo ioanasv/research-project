@@ -22,8 +22,7 @@ open import RangedSets.RangedSet
 open import RangedSetsProp.library
 open import RangedSetsProp.RangesProperties
 
-prop_empty : ⦃ o : Ord a ⦄ → ⦃ d : DiscreteOrdered a ⦄ → (v : a) 
-           → (not (rSetHas rSetEmpty v)) ≡ true 
+prop_empty : ⦃ o : Ord a ⦄ → ⦃ d : DiscreteOrdered a ⦄ → (v : a) → (not (rSetHas rSetEmpty v)) ≡ true 
 prop_empty v = refl
 
 prop_full : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (v : a) → (rSetHas rSetFull v) ≡ true
@@ -37,7 +36,7 @@ prop_validNormalised ⦃ o ⦄ ⦃ dio ⦄ ls@(r1 ∷ rs) =
   =⟨⟩  
     (validRangeList (normalise (sort (filter (λ r → (rangeIsEmpty r) == false) ls)) ⦃ sortedList ls ⦄ ⦃ validRangesList ls ⦄))
   =⟨ propIsTrue (validRangeList (normalise (sort (filter (λ r → (rangeIsEmpty r) == false) ls)) ⦃ sortedList ls ⦄ ⦃ validRangesList ls ⦄))
-    (normalisedSortedList (sort (filter (λ r → (rangeIsEmpty r) == false) ls)) (sortedList ls) (validRangesList ls)) ⟩ 
+    (validNormalised (sort (filter (λ r → (rangeIsEmpty r) == false) ls)) (sortedList ls) (validRangesList ls)) ⟩ 
     true 
   end
 
@@ -1102,19 +1101,19 @@ prop_strictSubset ⦃ o ⦄ ⦃ dio ⦄ rs {prf} =
 unionHelper : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs1 : RSet a) → (rs2 : RSet a)
          → (prf1 : IsTrue (validRangeList (rSetRanges rs1))) → (prf2 : IsTrue (validRangeList (rSetRanges rs2)))
          → validRangeList (rSetRanges (rSetUnion rs1 rs2)) 
-         ≡ validRangeList (normalise (merge1 (rSetRanges rs1) (rSetRanges rs2)) ⦃ merge1Sorted rs1 rs2 ⦄ ⦃ merge1HasValidRanges rs1 rs2 ⦄)
+         ≡ validRangeList (normalise (merge1 (rSetRanges rs1) (rSetRanges rs2)) ⦃ merge1Sorted rs1 rs2 ⦄ ⦃ merge1ValidRg rs1 rs2 ⦄)
 unionHelper ⦃ o ⦄ ⦃ dio ⦄ rs1@(RS ls1) rs2@(RS ls2) prf1 prf2 =   
   begin 
      validRangeList (rSetRanges (rSetUnion rs1 rs2)) 
   =⟨⟩ 
-     validRangeList (rSetRanges (RS (normalise (merge1 (rSetRanges rs1) (rSetRanges rs2)) ⦃ merge1Sorted rs1 rs2 ⦄  ⦃ merge1HasValidRanges rs1 rs2 ⦄) {unionHolds rs1 rs2}))
+     validRangeList (rSetRanges (RS (normalise (merge1 (rSetRanges rs1) (rSetRanges rs2)) ⦃ merge1Sorted rs1 rs2 ⦄  ⦃ merge1ValidRg rs1 rs2 ⦄) {unionHolds rs1 rs2}))
   =⟨⟩
-     validRangeList (normalise (merge1 (rSetRanges rs1) (rSetRanges rs2)) ⦃ merge1Sorted rs1 rs2 ⦄  ⦃ merge1HasValidRanges rs1 rs2 ⦄)
+     validRangeList (normalise (merge1 (rSetRanges rs1) (rSetRanges rs2)) ⦃ merge1Sorted rs1 rs2 ⦄  ⦃ merge1ValidRg rs1 rs2 ⦄)
   end
 
 union2 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs1 : RSet a) → (rs2 : RSet a)
          → (prf1 : IsTrue (validRangeList (rSetRanges rs1))) → (prf2 : IsTrue (validRangeList (rSetRanges rs2)))
-         → IsTrue (validRangeList (normalise (merge1 (rSetRanges rs1) (rSetRanges rs2)) ⦃ merge1Sorted rs1 rs2 ⦄  ⦃ merge1HasValidRanges rs1 rs2 ⦄))
+         → IsTrue (validRangeList (normalise (merge1 (rSetRanges rs1) (rSetRanges rs2)) ⦃ merge1Sorted rs1 rs2 ⦄  ⦃ merge1ValidRg rs1 rs2 ⦄))
          → IsTrue (validRangeList (rSetRanges (rSetUnion rs1 rs2) ))
 union2 rs1 rs2 prf1 prf2 prf = subst IsTrue (sym (unionHelper rs1 rs2 prf1 prf2)) prf
 
@@ -1125,9 +1124,11 @@ prop_rsethas ⦃ o ⦄ ⦃ dio ⦄ rs@(RS ranges) v = refl
 
 
 postulate 
+  -- if a range list contains an element, after normalizing it still contains that element
   rsetHasNormalised : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs1 : List (Range a)) → (v : a) 
     → (prf1 : IsTrue (sortedRangeList rs1)) → (prf2 : IsTrue (validRanges rs1)) 
     → rangeListHas (normalise rs1 ⦃ prf1 ⦄ ⦃ prf2 ⦄) v ≡ rangeListHas rs1 v
+  -- if a range list contains an element, after filtering the empty ranges, it still contains that element
   rsetHasFiltered : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs1 : List (Range a)) → (v : a) 
     → rangeListHas ((filter (λ x → rangeIsEmpty ⦃ o ⦄ ⦃ dio ⦄ x == false)) rs1) v ≡ rangeListHas rs1 v                  
 
@@ -1192,8 +1193,8 @@ prop_merge2has : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (ls1 
 
 prop_merge2hasHelper : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (ls1 ls2 : List (Range a))
   → {{ ne1 : NonEmpty ls1 }} → {{ ne2 : NonEmpty ls2 }}
-  → (v : a) → (b : Bool) 
-  → rangeListHas ((rangeIntersection (head ls1) (head ls2)) ∷ (if_then_else_ b (merge2 (tail ls1) ls2) (merge2 ls1 (tail ls2)))) v
+  → (v : a)
+  → rangeListHas ((rangeIntersection (head ls1) (head ls2)) ∷ (if_then_else_ (rangeUpper (head ls1) < rangeUpper (head ls2)) (merge2 (tail ls1) ls2) (merge2 ls1 (tail ls2)))) v
    ≡ ((rangeListHas ls1 v) && (rangeListHas ls2 v))
 
 prop_merge2has ⦃ o ⦄ ⦃ dio ⦄ [] [] v = refl 
@@ -1216,34 +1217,25 @@ prop_merge2has ⦃ o ⦄ ⦃ dio ⦄ ls1@([]) ls2@(r2 ∷ t2) v =
 prop_merge2has ⦃ o ⦄ ⦃ dio ⦄ ls1@(h1 ∷ t1) ls2@(h2 ∷ t2) v =  
    begin
     rangeListHas ((rangeIntersection h1 h2) ∷ (if_then_else_ (rangeUpper h1 < rangeUpper h2) (merge2 t1 ls2) (merge2 ls1 t2))) v
-   =⟨ prop_merge2hasHelper ls1 ls2 {{NonEmpty.itsNonEmpty}} {{NonEmpty.itsNonEmpty}} v (rangeUpper h1 < rangeUpper h2) ⟩
+   =⟨ prop_merge2hasHelper ls1 ls2 {{NonEmpty.itsNonEmpty}} {{NonEmpty.itsNonEmpty}} v ⟩
     ((rangeListHas ls1 v) && (rangeListHas ls2 v)) 
    end 
 
 postulate 
   falseinstance1 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (ls1 ls2 : List (Range a))
     → {{ ne1 : NonEmpty ls1 }} → {{ ne2 : NonEmpty ls2 }} 
-    → (v : a) → (b : Bool) → IsFalse b → IsFalse ((rangeListHas (tail ls1) v) && (rangeHas (head ls2) v))
+    → (v : a) → IsFalse (rangeUpper (head ls1) < rangeUpper (head ls2)) → IsFalse ((rangeListHas (tail ls1) v) && (rangeHas (head ls2) v))
   falseinstance2 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (ls1 ls2 : List (Range a))
     → {{ ne1 : NonEmpty ls1 }} → {{ ne2 : NonEmpty ls2 }}
-    → (v : a) → (b : Bool) → IsTrue b → IsFalse ((rangeHas (head ls1) v) && (rangeListHas (tail ls2) v))  
+    → (v : a) → IsTrue (rangeUpper (head ls1) < rangeUpper (head ls2)) → IsFalse ((rangeHas (head ls1) v) && (rangeListHas (tail ls2) v))  
   assume_ranges_nonempty : ⦃ ord : Ord a ⦄ → ⦃ diso : DiscreteOrdered a ⦄ → (r1 r2 : (Range a)) 
     → IsFalse (rangeIsEmpty r1 || rangeIsEmpty r2)
 
-prop_merge2hasHelper ⦃ o ⦄ ⦃ dio ⦄ ls1@(h1 ∷ t1) ls2@(h2 ∷ t2) v false = 
-   begin
-    rangeListHas ((rangeIntersection h1 h2) ∷ (merge2 ls1 t2)) v
-   =⟨⟩
-    ((rangeHas (rangeIntersection h1 h2) v) || (rangeListHas (merge2 ls1 t2) v))
-   =⟨ cong ((rangeHas (rangeIntersection h1 h2) v) ||_) (prop_merge2has ls1 t2 v) ⟩
-    ((rangeHas (rangeIntersection h1 h2) v) || ((rangeListHas ls1 v) && (rangeListHas t2 v)))
-   =⟨ cong (_|| ((rangeListHas ls1 v) && (rangeListHas t2 v))) (sym (prop_IntersectionRange h1 h2 {{assume_ranges_nonempty h1 h2}} v)) ⟩
-    (((rangeHas h1 v) && (rangeHas h2 v)) || ((rangeListHas ls1 v) && (rangeListHas t2 v)))    
-   =⟨ prop_logic2 (rangeHas h1 v) (rangeListHas t1 v) (rangeHas h2 v) (rangeListHas t2 v) (falseinstance1 ls1 ls2 {{NonEmpty.itsNonEmpty}} {{NonEmpty.itsNonEmpty}} v false IsFalse.itsFalse) ⟩            
-    ((rangeListHas ls1 v) && (rangeListHas ls2 v)) 
-   end 
-prop_merge2hasHelper ⦃ o ⦄ ⦃ dio ⦄ ls1@(h1 ∷ t1) ls2@(h2 ∷ t2) v true = 
-   begin
+prop_merge2hasHelper ⦃ o ⦄ ⦃ dio ⦄ ls1@(h1 ∷ t1) ls2@(h2 ∷ t2) {{ne1}} {{ne2}} v = 
+   ifWithInstances (rangeUpper (head ls1 {{ne1}}) < rangeUpper (head ls2 {{ne2}}))
+   (λ x -> (begin
+    rangeListHas ((rangeIntersection h1 h2) ∷ (if_then_else_ (rangeUpper h1 < rangeUpper h2) (merge2 t1 ls2) (merge2 ls1 t2))) v 
+   =⟨ cong (rangeListHas1 v) (cong ((rangeIntersection h1 h2) ∷_) (propIf2 (rangeUpper h1 < rangeUpper h2) x)) ⟩   
     rangeListHas ((rangeIntersection h1 h2) ∷ (merge2 t1 ls2)) v
    =⟨⟩
     ((rangeHas (rangeIntersection h1 h2) v) || (rangeListHas (merge2 t1 ls2) v))
@@ -1251,19 +1243,31 @@ prop_merge2hasHelper ⦃ o ⦄ ⦃ dio ⦄ ls1@(h1 ∷ t1) ls2@(h2 ∷ t2) v tru
     ((rangeHas (rangeIntersection h1 h2) v) || ((rangeListHas t1 v) && (rangeListHas ls2 v)))
    =⟨ cong (_|| ((rangeListHas t1 v) && (rangeListHas ls2 v))) (sym (prop_IntersectionRange h1 h2 {{assume_ranges_nonempty h1 h2}} v)) ⟩
     (((rangeHas h1 v) && (rangeHas h2 v)) || ((rangeListHas t1 v) && (rangeListHas ls2 v)))    
-   =⟨ prop_logic3 (rangeHas h1 v) (rangeListHas t1 v) (rangeHas h2 v) (rangeListHas t2 v) (falseinstance2 ls1 ls2 {{NonEmpty.itsNonEmpty}} {{NonEmpty.itsNonEmpty}} v true IsTrue.itsTrue) ⟩            
+   =⟨ prop_logic3 (rangeHas h1 v) (rangeListHas t1 v) (rangeHas h2 v) (rangeListHas t2 v) (falseinstance2 ls1 ls2 {{NonEmpty.itsNonEmpty}} {{NonEmpty.itsNonEmpty}} v x) ⟩            
     ((rangeListHas ls1 v) && (rangeListHas ls2 v)) 
-   end 
-
+   end))   
+  (λ x -> (begin
+    rangeListHas ((rangeIntersection h1 h2) ∷ (if_then_else_ (rangeUpper h1 < rangeUpper h2) (merge2 t1 ls2) (merge2 ls1 t2))) v 
+   =⟨ cong (rangeListHas1 v) (cong ((rangeIntersection h1 h2) ∷_) (propIf3 (rangeUpper h1 < rangeUpper h2) x)) ⟩   
+    rangeListHas ((rangeIntersection h1 h2) ∷ (merge2 ls1 t2)) v
+   =⟨⟩
+    ((rangeHas (rangeIntersection h1 h2) v) || (rangeListHas (merge2 ls1 t2) v))
+   =⟨ cong ((rangeHas (rangeIntersection h1 h2) v) ||_) (prop_merge2has ls1 t2 v) ⟩
+    ((rangeHas (rangeIntersection h1 h2) v) || ((rangeListHas ls1 v) && (rangeListHas t2 v)))
+   =⟨ cong (_|| ((rangeListHas ls1 v) && (rangeListHas t2 v))) (sym (prop_IntersectionRange h1 h2 {{assume_ranges_nonempty h1 h2}} v)) ⟩
+    (((rangeHas h1 v) && (rangeHas h2 v)) || ((rangeListHas ls1 v) && (rangeListHas t2 v)))    
+   =⟨ prop_logic2 (rangeHas h1 v) (rangeListHas t1 v) (rangeHas h2 v) (rangeListHas t2 v) (falseinstance1 ls1 ls2 {{NonEmpty.itsNonEmpty}} {{NonEmpty.itsNonEmpty}} v x) ⟩            
+    ((rangeListHas ls1 v) && (rangeListHas ls2 v)) 
+   end)) 
 
 prop_union : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (rs1 rs2 : RSet a) → (v : a) → (rSetHas (rSetUnion rs1 rs2) v) ≡ (rSetHas rs1 v || rSetHas rs2 v)
 prop_union ⦃ o ⦄ ⦃ dio ⦄ rs1@(RS []) rs2@(RS []) v = refl            
 prop_union ⦃ o ⦄ ⦃ dio ⦄ rs1@(RS ls1 {prf1}) rs2@(RS ls2 {prf2}) v = 
    begin
-    (rSetHas (RS (normalise (merge1 ls1 ls2) ⦃ merge1Sorted rs1 rs2 ⦄ ⦃ merge1HasValidRanges rs1 rs2 ⦄) {unionHolds rs1 rs2}) v)
-   =⟨ prop_rsethas (RS (normalise (merge1 ls1 ls2) ⦃ merge1Sorted rs1 rs2 ⦄ ⦃ merge1HasValidRanges rs1 rs2 ⦄) {unionHolds rs1 rs2}) v ⟩
-    rangeListHas (normalise (merge1 ls1 ls2) ⦃ merge1Sorted rs1 rs2 ⦄ ⦃ merge1HasValidRanges rs1 rs2 ⦄) v
-   =⟨ rsetHasNormalised (merge1 ls1 ls2) v (merge1Sorted rs1 rs2) (merge1HasValidRanges rs1 rs2) ⟩
+    (rSetHas (RS (normalise (merge1 ls1 ls2) ⦃ merge1Sorted rs1 rs2 ⦄ ⦃ merge1ValidRg rs1 rs2 ⦄) {unionHolds rs1 rs2}) v)
+   =⟨ prop_rsethas (RS (normalise (merge1 ls1 ls2) ⦃ merge1Sorted rs1 rs2 ⦄ ⦃ merge1ValidRg rs1 rs2 ⦄) {unionHolds rs1 rs2}) v ⟩
+    rangeListHas (normalise (merge1 ls1 ls2) ⦃ merge1Sorted rs1 rs2 ⦄ ⦃ merge1ValidRg rs1 rs2 ⦄) v
+   =⟨ rsetHasNormalised (merge1 ls1 ls2) v (merge1Sorted rs1 rs2) (merge1ValidRg rs1 rs2) ⟩
      rangeListHas (merge1 ls1 ls2) v
    =⟨ prop_merge1has ls1 ls2 v ⟩
      ((rangeListHas ls1 v) || (rangeListHas ls2 v))
@@ -1448,11 +1452,11 @@ prop_union_commutes ⦃ o ⦄ ⦃ dio ⦄ RS1@(RS ls1@(r1 ∷ rs1) {prf1} ) RS2@
     (rSetUnion RS1 RS2) 
    =⟨⟩
     RS ⦃ o ⦄ ⦃ dio ⦄ (normalise ⦃ o ⦄ ⦃ dio ⦄ (merge1 ⦃ o ⦄ ⦃ dio ⦄ ls1 ls2) ⦃ merge1Sorted RS1 RS2 ⦄ 
-    ⦃ merge1HasValidRanges RS1 RS2 ⦄) {unionHolds RS1 RS2}
-   =⟨ rangesEqiv (rangesEqiv2 (merge1Sorted RS1 RS2) (merge1HasValidRanges RS1 RS2)
-     (merge1Sorted RS2 RS1) (merge1HasValidRanges RS2 RS1) (prop_sym_merge1 ls1 ls2))  ⟩
+    ⦃ merge1ValidRg RS1 RS2 ⦄) {unionHolds RS1 RS2}
+   =⟨ rangesEqiv (rangesEqiv2 (merge1Sorted RS1 RS2) (merge1ValidRg RS1 RS2)
+     (merge1Sorted RS2 RS1) (merge1ValidRg RS2 RS1) (prop_sym_merge1 ls1 ls2))  ⟩
     RS ⦃ o ⦄ ⦃ dio ⦄ (normalise ⦃ o ⦄ ⦃ dio ⦄ (merge1 ⦃ o ⦄ ⦃ dio ⦄ ls2 ls1) ⦃ merge1Sorted RS2 RS1 ⦄ 
-    ⦃ merge1HasValidRanges RS2 RS1 ⦄) {unionHolds RS2 RS1}
+    ⦃ merge1ValidRg RS2 RS1 ⦄) {unionHolds RS2 RS1}
   =⟨⟩
    (rSetUnion RS2 RS1)
      end

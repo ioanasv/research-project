@@ -39,15 +39,3 @@ BoundaryBelowAllSmaller (BoundaryAbove _)  = refl
 postulate
   prop_max_sym : {{ o : Ord a }} -> {{ dio : DiscreteOrdered a}} -> (r1 : Boundary a) -> (r2 : Boundary a) -> max r1 r2 ≡ max r2 r1 
   prop_min_sym : {{ o : Ord a }} -> {{ dio : DiscreteOrdered a}} -> (r1 : Boundary a) -> (r2 : Boundary a) -> min r1 r2 ≡ min r2 r1 
-  
--- prop_max_sym : {{ o : Ord a }} -> {{ dio : DiscreteOrdered a}} -> (r1 : Boundary a) -> (r2 : Boundary a) -> max r1 r2 ≡ max r2 r1 
--- prop_max_sym {{o}} {{dio}} r1 r2 = 
---     begin
---         max r1 r2
---     =⟨⟩   
---         if (compare x y == GT) then x else y
---     =⟨⟩   
---         if (compare y x == GT) then y else x     
---     =⟨⟩ 
---         max r2 r1 
---     end            

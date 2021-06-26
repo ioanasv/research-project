@@ -203,6 +203,55 @@ prop_UnionRange1 ⦃ ord ⦄ ⦃ diso ⦄ r1@(Rg l1 u1) r2@(Rg l2 u2) ⦃ ne1 �
      ((rangeHas r1 n) || (rangeHas r2 n))      
    end
 
+postulate 
+  -- if 2 ranges r1@(Rg l1 u1) and r2@(Rg l2 u2) have common members, such that max l1 l2 <= min u1 u2, 
+  -- then there is no value smaller than l1 and larger than u2 
+  unionproperty0 : ⦃ ord : Ord a ⦄ → ⦃ diso : DiscreteOrdered a ⦄ 
+    → (r1 r2 : (Range a)) → ⦃ ne1 : IsFalse (rangeIsEmpty r1) ⦄ → ⦃ ne2 : IsFalse (rangeIsEmpty r2) ⦄
+    → ⦃ ne3 : IsTrue ((max (rangeLower r1) (rangeLower r2)) <= (min (rangeUpper r1) (rangeUpper r2))) ⦄ → (n : a) 
+    -> IsFalse ((not (n />/ (rangeLower r1))) && (n />/ (rangeLower r2)) && not (n />/ (rangeUpper r1)) && (not (not (n />/ (rangeUpper r2)))))
+  -- if 2 ranges r1@(Rg l1 u1) and r2@(Rg l2 u2) have common members, such that max l1 l2 <= min u1 u2, 
+  -- then there is no value smaller than l2 and larger than u1
+  unionproperty1 : ⦃ ord : Ord a ⦄ → ⦃ diso : DiscreteOrdered a ⦄ 
+    → (r1 r2 : (Range a)) → ⦃ ne1 : IsFalse (rangeIsEmpty r1) ⦄ → ⦃ ne2 : IsFalse (rangeIsEmpty r2) ⦄
+    → ⦃ ne3 : IsTrue ((max (rangeLower r1) (rangeLower r2)) <= (min (rangeUpper r1) (rangeUpper r2))) ⦄ → (n : a) 
+    -> IsFalse ((n />/ (rangeLower r1)) && (not (n />/ (rangeLower r2))) && (not (not (n />/ (rangeUpper r1)))) && (not (n />/ (rangeUpper r2))))
+
+prop_UnionRange2 : ⦃ ord : Ord a ⦄ → ⦃ diso : DiscreteOrdered a ⦄ 
+  → (r1 r2 : (Range a)) → ⦃ ne1 : IsFalse (rangeIsEmpty r1) ⦄ → ⦃ ne2 : IsFalse (rangeIsEmpty r2) ⦄
+  → ⦃ ne3 : IsTrue ((max (rangeLower r1) (rangeLower r2)) <= (min (rangeUpper r1) (rangeUpper r2))) ⦄ → (n : a) 
+  → (rangeListHas1 n (rangeUnion ⦃ ord ⦄ ⦃ diso ⦄ r1 r2)) ≡ ((rangeHas ⦃ ord ⦄ r1 n) || (rangeHas ⦃ ord ⦄ r2 n)) 
+prop_UnionRange2 ⦃ ord ⦄ ⦃ diso ⦄ r1@(Rg l1 u1) r2@(Rg l2 u2) ⦃ ne1 ⦄ ⦃ ne2 ⦄ ⦃ ne3 ⦄ n = 
+   begin
+     (rangeListHas1 n (rangeUnion r1 r2))
+   =⟨⟩
+     (rangeListHas1 n (if_then_else_ (rangeIsEmpty r1) (r2 ∷ []) (rangeU1 r1 r2)))
+   =⟨ propIf (rangeListHas1 n) (rangeIsEmpty r1) ⟩
+     if_then_else_ (rangeIsEmpty r1) (rangeListHas1 n (r2 ∷ [])) (rangeListHas1 n (rangeU1 r1 r2))
+   =⟨ propIf3 (rangeIsEmpty r1) ne1 ⟩
+     rangeListHas1 n (rangeU1 r1 r2) 
+   =⟨ cong (rangeListHas1 n) (propIf3 (rangeIsEmpty r2) ne2) ⟩
+     (rangeListHas1 n (rangeU2 r1 r2))
+   =⟨ cong (rangeListHas1 n) (propIf2 ((max l1 l2) <= (min u1 u2)) ne3) ⟩  
+     (rangeListHas1 n ((Rg (min l1 l2) (max u1 u2)) ∷ []))
+   =⟨⟩  
+     ((rangeHas (Rg (min l1 l2) (max u1 u2)) n) || false)  
+   =⟨ (prop_or_false2 (rangeHas (Rg (min l1 l2) (max u1 u2)) n)) ⟩  
+     (rangeHas (Rg (min l1 l2) (max u1 u2)) n) 
+   =⟨⟩ 
+      ((n />/ (min l1 l2)) && not (n />/ (max u1 u2)))     
+   =⟨ cong (_&& not (n />/ (max u1 u2))) (sym (boundaries1 n l1 l2)) ⟩    
+      (((n />/ l1) || (n />/ l2)) && not (n />/ (max u1 u2)))     
+   =⟨ cong (((n />/ l1) || (n />/ l2)) &&_) (cong not (sym (boundaries0 n u1 u2 )))  ⟩     
+      (((n />/ l1) || (n />/ l2)) && (not ((n />/ u1) && (n />/ u2))))
+   =⟨ cong (((n />/ l1) || (n />/ l2)) &&_) (prop_demorgan (n />/ u1) (n />/ u2)) ⟩   
+      (((n />/ l1) || (n />/ l2)) && (not (n />/ u1) || (not (n />/ u2))))
+   =⟨ prop_logic7 (n />/ l1) (n />/ l2) (not (n />/ u1)) (not (n />/ u2)) (unionproperty0 r1 r2 ⦃ ne1 ⦄ ⦃ ne2 ⦄ ⦃ ne3 ⦄ n) (unionproperty1 r1 r2 ⦃ ne1 ⦄ ⦃ ne2 ⦄ ⦃ ne3 ⦄ n) ⟩      
+    (((n />/ l1) && not (n />/ u1)) || ((n />/ l2) && not (n />/ u2))) 
+   =⟨⟩ 
+     ((rangeHas r1 n) || (rangeHas r2 n))      
+   end
+
 prop_emptyRange : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (r : Range a) → not (rangeIsEmpty r) ≡ (rangeLower r <= rangeUpper r)
 prop_emptyRange ⦃ o ⦄ ⦃ dio ⦄ r@(Rg l u) = 
   begin 

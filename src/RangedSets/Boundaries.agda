@@ -16,7 +16,7 @@ import RangedSets.DiscreteOrdered
 infix 4 />/
 #-}
 
-data Boundary (a : Set) ⦃ b : Ord a ⦄ ⦃ _ : DiscreteOrdered a ⦃ b ⦄ ⦄ : Set where
+data Boundary (a : Set) ⦃ o : Ord a ⦄ ⦃ d : DiscreteOrdered a ⦄ : Set where
     BoundaryAbove    : a → Boundary a
     BoundaryBelow    : a → Boundary a
     BoundaryAboveAll : Boundary a

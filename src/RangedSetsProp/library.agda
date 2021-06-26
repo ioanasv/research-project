@@ -62,6 +62,10 @@ isTrue&&₂ {false} ()
 ifThenElseHelper :  {a : Set ℓ} → a → a → Bool → a
 ifThenElseHelper b c d = if_then_else_ d b c 
 
+ifWithInstances : {a : Set} (cond : Bool) -> (IsTrue cond -> a) -> (IsFalse cond -> a) -> a
+ifWithInstances true i j = i IsTrue.itsTrue
+ifWithInstances false i j = j IsFalse.itsFalse
+
 propIf : {a b : Set} → {x y : a} (f : a → b) (c : Bool) → f (if c then x else y) ≡ (if c then f x else f y)
 propIf f false = refl
 propIf f true = refl
@@ -110,10 +114,28 @@ postulate
    eq4 : ⦃ o : Ord a ⦄ → ∀ {x y : a} → (x ≡ y) → ((compare x y) == EQ) ≡ true
    eq5 : ⦃ o : Ord a ⦄ → (a b c d : a) → IsTrue (a <= c) → IsTrue (a <= b) → IsTrue (c <= d) → (a <= (max b d)) ≡ true
    eq6 : ⦃ o : Ord a ⦄ → (x y : a) → IsTrue (x > y) → IsTrue (y <= x) 
+   eq6' : ⦃ o : Ord a ⦄ → (x y : a) → IsTrue (x < y) → IsTrue (x <= y) 
+   eq6'' : ⦃ o : Ord a ⦄ → (x y : a) → IsFalse (x < y) → IsTrue (y <= x)
    eq7 : ⦃ o : Ord a ⦄ → (a b c d : a) → IsTrue (a <= b && b <= c && c <= d) → IsTrue (a <= c) 
    eq8 : ⦃ o : Ord a ⦄ → (a b c : a) → IsTrue (a <= b) → IsTrue (b <= c) → IsTrue (a <= c) 
    boundaries0 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (x : a) → (b c : Boundary a) → ((x />/ b) && (x />/ c)) ≡ (x />/ (max b c))
    boundaries1 : ⦃ o : Ord a ⦄ → ⦃ dio : DiscreteOrdered a ⦄ → (x : a) → (b c : Boundary a) → ((x />/ b) || (x />/ c)) ≡ (x />/ (min b c))
+
+prop_logic7 : (a b c d : Bool) -> IsFalse (not a && b && c && not d) -> IsFalse (a && (not b) && (not c) && d) -> ((a || b) && (c || d)) ≡ ((a && c) || (b && d)) 
+prop_logic7 true true true true _ _ = refl
+prop_logic7 true true true false _ _ = refl
+prop_logic7 true false true true _ _ = refl
+prop_logic7 true true false true _ _ = refl
+prop_logic7 true true false false _ _ = refl
+prop_logic7 true false false false _ _ = refl
+prop_logic7 false true true true _ _ = refl
+prop_logic7 false true false false _ _ = refl 
+prop_logic7 false false false true _ _ = refl 
+prop_logic7 false false false false _ _ = refl
+prop_logic7 false false true true _ _ = refl 
+prop_logic7 false false true false _ _ = refl
+prop_logic7 true false true false _ _ = refl
+prop_logic7 false true false true _ _ = refl 
 
 prop_logic0 : (a b : Bool) -> IsTrue a -> IsTrue (not b) -> a ≡ (not b) 
 prop_logic0 true false _ _ = refl 
